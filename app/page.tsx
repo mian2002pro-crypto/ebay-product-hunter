@@ -11,7 +11,7 @@ export default function Home(){
   const[q,setQ]=useState("");
   const[country,setCountry]=useState("US");
   const[season,setSeason]=useState("All");
-  const[view,setView]=useState("hunter");
+  const[view,setView]=useState("hunter");\n  const[trendTerms,setTrendTerms]=useState<{term:string;listings:number;avgPrice:number;season:string}[]>([]);
   const[sort,setSort]=useState("price");
   const[products,setProducts]=useState<Product[]>([]);
   const[saved,setSaved]=useState<string[]>([]);
@@ -25,7 +25,7 @@ export default function Home(){
       const response=await fetch(`/api/ebay/search?${params.toString()}`,{cache:"no-store"});
       const data=await response.json();
       if(!response.ok) throw new Error(data.error||"Unable to load eBay data");
-      setProducts(data.items||[]);
+      setProducts(data.items||[]);\n      const counts=new Map<string,{term:string;listings:number;total:number;season:string}>();\n      (data.items||[]).forEach((p:Product)=>String(p.title).toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\\s+/).filter((w:string)=>w.length>=4&&!["with","and","for","the","new","set","from","inch"].includes(w)).forEach((term:string)=>{const x=counts.get(term)||{term,listings:0,total:0,season:p.season};x.listings++;x.total+=p.price||0;counts.set(term,x);}));\n      setTrendTerms([...counts.values()].map(x=>({term:x.term,listings:x.listings,avgPrice:Number((x.total/x.listings).toFixed(2)),season:x.season})).sort((a,b)=>b.listings-a.listings).slice(0,12));
     }catch(e){setProducts([]);setError(e instanceof Error?e.message:"Unable to load eBay data");}
     finally{setLoading(false);}
   };
@@ -48,9 +48,9 @@ export default function Home(){
       <div className="sidebox"><small>MARKET</small><select value={country} onChange={e=>setCountry(e.target.value)}>{markets.map(m=><option key={m}>{m}</option>)}</select></div>
     </aside>
     <section className="content">
-      <header><div><p className="eyebrow">LIVE EBAY MARKET: {country}</p><h1>{view==="hunter"?"Find eBay products":"Product Intelligence"}</h1><p className="muted">Live active-listing research. Sold-demand and supplier data will be added as separate providers.</p></div><button className="primary" onClick={load} disabled={loading}><RefreshCw className={loading?"spin":""}/>{loading?"Loading":"Refresh data"}</button></header>
+      <header><div><p className="eyebrow">LIVE EBAY MARKET: {country}</p><h1>{view==="hunter"?"Find eBay products":view==="trending"?"Trending keywords":"Product Intelligence"}</h1><p className="muted">Live active-listing research. Sold-demand and supplier data will be added as separate providers.</p></div><button className="primary" onClick={load} disabled={loading}><RefreshCw className={loading?"spin":""}/>{loading?"Loading":"Refresh data"}</button></header>
       <div className="stats"><div><TrendingUp/><span>Live listings</span><strong>{products.length}</strong></div><div><ArrowUpRight/><span>Avg opportunity</span><strong>{products.length?Math.round(products.reduce((a,p)=>a+(p.opportunityScore||0),0)/products.length):0}</strong></div><div><ShoppingCart/><span>Market</span><strong>{country}</strong></div><div><Package/><span>Saved</span><strong>{saved.length}</strong></div><div><ArrowUpRight/><span>Data status</span><strong>{error?"Setup":"Live"}</strong></div></div>
-      <div className="toolbar"><div className="search"><Search/><input placeholder="Search eBay products or keywords..." value={q} onChange={e=>setQ(e.target.value)}/></div><select value={season} onChange={e=>setSeason(e.target.value)}>{seasons.map(s=><option key={s}>{s}</option>)}</select><div className="profit-settings"><label>Fee % <input type="number" min="0" max="100" value={feeRate} onChange={e=>setFeeRate(Number(e.target.value))}/></label><label>Ship <input type="number" min="0" value={shipping} onChange={e=>setShipping(Number(e.target.value))}/></label><label>Min profit <input type="number" min="0" value={minProfit} onChange={e=>setMinProfit(Number(e.target.value))}/></label></div></div>
+      {view==="trending"&&<div className="trend-grid">{trendTerms.map(t=><div className="trend-card" key={t.term}><b>{t.term}</b><span>{t.listings} listings · {t.season}</span><strong>{money({price:t.avgPrice,currency:"USD"})} avg.</strong></div>)}</div>}\n      <div className="toolbar"><div className="search"><Search/><input placeholder="Search eBay products or keywords..." value={q} onChange={e=>setQ(e.target.value)}/></div><select value={season} onChange={e=>setSeason(e.target.value)}>{seasons.map(s=><option key={s}>{s}</option>)}</select><div className="profit-settings"><label>Fee % <input type="number" min="0" max="100" value={feeRate} onChange={e=>setFeeRate(Number(e.target.value))}/></label><label>Ship <input type="number" min="0" value={shipping} onChange={e=>setShipping(Number(e.target.value))}/></label><label>Min profit <input type="number" min="0" value={minProfit} onChange={e=>setMinProfit(Number(e.target.value))}/></label></div></div>
       {error&&<div className="notice"><b>eBay connection needs configuration.</b><span>{error}</span><small>Add EBAY_CLIENT_ID and EBAY_CLIENT_SECRET in your deployment environment.</small></div>}
       <div className="sectionhead"><div><h2>Live product opportunities</h2><p>{filtered.length} matching active listings</p></div><select value={sort} onChange={e=>setSort(e.target.value)}><option value="price">Sort: Price</option><option value="title">Sort: Title</option></select></div>
       <div className="table"><div className="thead"><span>PRODUCT</span><span>PRICE</span><span>STATUS</span><span>SELLER</span><span>DEMAND</span><span>SOURCE</span><span></span><span></span></div>
