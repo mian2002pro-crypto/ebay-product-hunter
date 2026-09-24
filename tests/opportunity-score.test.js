@@ -1,5 +1,5 @@
 const assert=require("node:assert/strict");
-const {scoreOpportunity,detectSeason,extractTrendTerms,rankTrendProducts}=require("../lib/opportunity.js");
+const {scoreOpportunity,detectSeason,extractTrendTerms,rankTrendProducts,compareTrendSnapshots}=require("../lib/opportunity.js");
 
 assert.equal(detectSeason("LED Halloween Pumpkin Lights"),"Halloween");
 assert.equal(detectSeason("Christmas window projector"),"Christmas");
@@ -28,4 +28,11 @@ const trends=rankTrendProducts([
 assert.equal(trends[0].term,"pumpkin");
 assert.equal(trends[0].listings,2);
 assert.equal(trends[0].avgPrice,25);
+
+const movement=compareTrendSnapshots(
+  [{term:"pumpkin",listings:10,avgPrice:20},{term:"ornament",listings:4,avgPrice:15}],
+  [{term:"pumpkin",listings:15,avgPrice:22},{term:"ornament",listings:2,avgPrice:15}]
+);
+assert.equal(movement.find(x=>x.term==="pumpkin").direction,"Rising");
+assert.equal(movement.find(x=>x.term==="ornament").direction,"Falling");
 console.log("opportunity scoring tests passed");
