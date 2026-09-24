@@ -2,7 +2,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {Search,TrendingUp,Package,ShoppingCart,Bookmark,SlidersHorizontal,ArrowUpRight,RefreshCw,ExternalLink} from "lucide-react";
 
-type Product={id:string;title:string;category:string;price:number;currency:string;sold:number|null;active:number;trend:number|null;supplier:number|null;season:string;market:string;condition:string;seller:string;url:string;image:string};
+type Product={id:string;title:string;category:string;price:number;currency:string;sold:number|null;active:number;trend:number|null;supplier:number|null;season:string;market:string;condition:string;seller:string;url:string;image:string};\ntype Supplier={id:string;title:string;price:number;currency:string;source:string;image?:string;url?:string};
 
 const markets=["US","UK","CA","AU","DE","FR","IT","ES"];
 const seasons=["All","Halloween","Christmas","Fall","Winter","Spring","Evergreen"];
@@ -16,7 +16,7 @@ export default function Home(){
   const[products,setProducts]=useState<Product[]>([]);
   const[saved,setSaved]=useState<string[]>([]);
   const[loading,setLoading]=useState(false);
-  const[error,setError]=useState("");
+  const[error,setError]=useState("");\n  const[supplier,setSupplier]=useState<Record<string,Supplier>>({});\n  const[supplierLoading,setSupplierLoading]=useState<string | null>(null);\n\n  const findSupplier=async(p:Product)=>{\n    setSupplierLoading(p.id);\n    try{\n      const params=new URLSearchParams({provider:"cj",market:country,q:p.title,size:"5"});\n      const response=await fetch(`/api/sourcing/search?${params.toString()}`,{cache:"no-store"});\n      const data=await response.json();\n      if(!response.ok) throw new Error(data.error?.message||"Supplier search failed");\n      const match=data.items?.[0];\n      if(match) setSupplier(x=>({...x,[p.id]:match}));\n    }catch(e){setError(e instanceof Error?e.message:"Supplier search failed");}\n    finally{setSupplierLoading(null);}\n  };
 
   const load=async()=>{
     setLoading(true);setError("");
@@ -53,8 +53,8 @@ export default function Home(){
       <div className="toolbar"><div className="search"><Search/><input placeholder="Search eBay products or keywords..." value={q} onChange={e=>setQ(e.target.value)}/></div><select value={season} onChange={e=>setSeason(e.target.value)}>{seasons.map(s=><option key={s}>{s}</option>)}</select><button className="filter"><SlidersHorizontal/> Filters</button></div>
       {error&&<div className="notice"><b>eBay connection needs configuration.</b><span>{error}</span><small>Add EBAY_CLIENT_ID and EBAY_CLIENT_SECRET in your deployment environment.</small></div>}
       <div className="sectionhead"><div><h2>Live product opportunities</h2><p>{filtered.length} matching active listings</p></div><select value={sort} onChange={e=>setSort(e.target.value)}><option value="price">Sort: Price</option><option value="title">Sort: Title</option></select></div>
-      <div className="table"><div className="thead"><span>PRODUCT</span><span>PRICE</span><span>STATUS</span><span>SELLER</span><span>DEMAND</span><span>SOURCE</span><span></span></div>
-      {filtered.map(p=><div className="row" key={p.id}><div className="product">{p.image?<img className="thumbimg" src={p.image} alt=""/>:<div className="thumb">{p.title.slice(0,2).toUpperCase()}</div>}<div><b>{p.title}</b><small>{p.condition||"Listing"} · {p.market}</small></div></div><strong>{money(p)}</strong><span className="live">ACTIVE</span><span>{p.seller||"—"}</span><span className="unknown">Not available</span><a className="icon" href={p.url} target="_blank" rel="noreferrer" title="Open eBay listing"><ExternalLink size={17}/></a><button className="icon" onClick={()=>toggleSaved(p.id)} title="Save"><Bookmark size={17} fill={saved.includes(p.id)?"currentColor":"none"}/></button></div>)}
+      <div className="table"><div className="thead"><span>PRODUCT</span><span>PRICE</span><span>STATUS</span><span>SELLER</span><span>DEMAND</span><span>SOURCE</span><span></span><span></span></div>
+      {filtered.map(p=><div className="row" key={p.id}><div className="product">{p.image?<img className="thumbimg" src={p.image} alt=""/>:<div className="thumb">{p.title.slice(0,2).toUpperCase()}</div>}<div><b>{p.title}</b><small>{p.condition||"Listing"} · {p.market}</small></div></div><strong>{money(p)}</strong><span className="live">ACTIVE</span><span>{p.seller||"—"}</span><span className="unknown">{supplier[p.id]?`CJ: ${money(supplier[p.id] as Product)}`:"Not matched"}</span><button className="supplier-btn" onClick={()=>findSupplier(p)} disabled={supplierLoading===p.id}>{supplierLoading===p.id?"Matching…":"Find supplier"}</button><a className="icon" href={p.url} target="_blank" rel="noreferrer" title="Open eBay listing"><ExternalLink size={17}/></a><button className="icon" onClick={()=>toggleSaved(p.id)} title="Save"><Bookmark size={17} fill={saved.includes(p.id)?"currentColor":"none"}/></button></div>)}
       {!loading&&!filtered.length&&!error&&<div className="empty">No matching listings. Try another keyword or market.</div>}
       </div>
     </section>
