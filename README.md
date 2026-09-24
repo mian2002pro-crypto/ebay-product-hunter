@@ -57,3 +57,12 @@ npm install
 npm test
 npm run dev
 ```
+
+
+### Supplier sourcing: CJdropshipping
+
+The app now includes a CJdropshipping provider adapter and `/api/sourcing/search`.
+
+Set either `CJ_ACCESS_TOKEN` or `CJ_API_KEY`. CJ's API 2.0 product search supports keyword, country, price-range and pagination filters. The provider normalizes results into the app's supplier model.
+
+CJ API credentials should be kept server-side and never exposed to browser code.
