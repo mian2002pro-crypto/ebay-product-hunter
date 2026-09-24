@@ -42,3 +42,27 @@ test("normalizeCjProducts returns stable supplier records", () => {
   assert.equal(result.items[0].currency, "USD");
   assert.equal(result.items[0].source, "CJdropshipping");
 });
+
+
+test("normalizeCjProducts supports the current V2 nested productList response", () => {
+  const result = normalizeCjProducts({
+    code: 200,
+    result: true,
+    data: {
+      totalRecords: 1,
+      content: [{
+        productList: [{
+          id: "pid2",
+          nameEn: "Christmas Pet Toy",
+          bigImage: "https://example.com/cj.jpg",
+          sellPrice: "4.10-6.20",
+          sku: "CJSKU2"
+        }]
+      }]
+    }
+  });
+  assert.equal(result.total, 1);
+  assert.equal(result.items[0].id, "pid2");
+  assert.equal(result.items[0].title, "Christmas Pet Toy");
+  assert.equal(result.items[0].price, 4.1);
+});
