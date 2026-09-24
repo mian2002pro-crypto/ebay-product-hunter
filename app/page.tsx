@@ -39,7 +39,7 @@ export default function Home(){
   },[products,season,view,saved,sort]);
 
   const toggleSaved=(id:string)=>setSaved(x=>x.includes(id)?x.filter(v=>v!==id):[...x,id]);
-  const money=(p:Product)=>new Intl.NumberFormat(undefined,{style:"currency",currency:p.currency||"USD"}).format(p.price);
+  const money=(p:{price:number;currency:string})=>new Intl.NumberFormat(undefined,{style:"currency",currency:p.currency||"USD"}).format(p.price);
 
   return <main>
     <aside>
@@ -54,7 +54,7 @@ export default function Home(){
       {error&&<div className="notice"><b>eBay connection needs configuration.</b><span>{error}</span><small>Add EBAY_CLIENT_ID and EBAY_CLIENT_SECRET in your deployment environment.</small></div>}
       <div className="sectionhead"><div><h2>Live product opportunities</h2><p>{filtered.length} matching active listings</p></div><select value={sort} onChange={e=>setSort(e.target.value)}><option value="price">Sort: Price</option><option value="title">Sort: Title</option></select></div>
       <div className="table"><div className="thead"><span>PRODUCT</span><span>PRICE</span><span>STATUS</span><span>SELLER</span><span>DEMAND</span><span>SOURCE</span><span></span><span></span></div>
-      {filtered.map(p=><div className="row" key={p.id}><div className="product">{p.image?<img className="thumbimg" src={p.image} alt=""/>:<div className="thumb">{p.title.slice(0,2).toUpperCase()}</div>}<div><b>{p.title}</b><small>{p.condition||"Listing"} · {p.market}</small></div></div><strong>{money(p)}</strong><span className="live">ACTIVE</span><span>{p.seller||"—"}</span><span className="unknown">{supplier[p.id]?`CJ: ${money(supplier[p.id] as Product)}`:"Not matched"}</span><button className="supplier-btn" onClick={()=>findSupplier(p)} disabled={supplierLoading===p.id}>{supplierLoading===p.id?"Matching…":"Find supplier"}</button><a className="icon" href={p.url} target="_blank" rel="noreferrer" title="Open eBay listing"><ExternalLink size={17}/></a><button className="icon" onClick={()=>toggleSaved(p.id)} title="Save"><Bookmark size={17} fill={saved.includes(p.id)?"currentColor":"none"}/></button></div>)}
+      {filtered.map(p=><div className="row" key={p.id}><div className="product">{p.image?<img className="thumbimg" src={p.image} alt=""/>:<div className="thumb">{p.title.slice(0,2).toUpperCase()}</div>}<div><b>{p.title}</b><small>{p.condition||"Listing"} · {p.market}</small></div></div><strong>{money(p)}</strong><span className="live">ACTIVE</span><span>{p.seller||"—"}</span><span className="unknown">{supplier[p.id]?`CJ: ${money(supplier[p.id])}`:"Not matched"}</span><button className="supplier-btn" onClick={()=>findSupplier(p)} disabled={supplierLoading===p.id}>{supplierLoading===p.id?"Matching…":"Find supplier"}</button><a className="icon" href={p.url} target="_blank" rel="noreferrer" title="Open eBay listing"><ExternalLink size={17}/></a><button className="icon" onClick={()=>toggleSaved(p.id)} title="Save"><Bookmark size={17} fill={saved.includes(p.id)?"currentColor":"none"}/></button></div>)}
       {!loading&&!filtered.length&&!error&&<div className="empty">No matching listings. Try another keyword or market.</div>}
       </div>
     </section>
