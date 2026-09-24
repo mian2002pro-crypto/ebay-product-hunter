@@ -7,7 +7,7 @@ test("supplier search delegates to CJ provider and returns normalized results", 
     total: 1,
     items: [{ id: "p1", title: "Pet Hair Remover", price: 3.2, currency: "USD", source: "CJdropshipping" }]
   });
-  const result = await searchSuppliers({ provider: "cj", q: "pet hair remover", fetchImpl: fake });
+  const result = await searchSuppliers({ provider: "cj", q: "pet hair remover" }, { cjSearch: fake });
   assert.equal(result.provider, "cj");
   assert.equal(result.total, 1);
   assert.equal(result.items[0].source, "CJdropshipping");
