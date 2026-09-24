@@ -14,4 +14,8 @@ assert.ok(score.reasons.length>0);
 
 const low=scoreOpportunity({price:5,active:100,title:"Basic item"}, {market:"US",season:"All"});
 assert.ok(low.score<score.score);
+
+const sourced=scoreOpportunity({price:30,active:5,title:"Halloween Pumpkin Lights",supplierCost:7,shipping:2,sold:20},{market:"US",season:"Halloween"});
+assert.ok(sourced.score>score.score);
+assert.ok(sourced.reasons.some((r)=>/supplier|margin|profit/i.test(r)));
 console.log("opportunity scoring tests passed");
