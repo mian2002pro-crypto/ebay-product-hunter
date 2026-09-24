@@ -1,5 +1,5 @@
 const assert=require("node:assert/strict");
-const {scoreOpportunity,detectSeason}=require("../lib/opportunity.js");
+const {scoreOpportunity,detectSeason,extractTrendTerms,rankTrendProducts}=require("../lib/opportunity.js");
 
 assert.equal(detectSeason("LED Halloween Pumpkin Lights"),"Halloween");
 assert.equal(detectSeason("Christmas window projector"),"Christmas");
@@ -18,4 +18,14 @@ assert.ok(low.score<score.score);
 const sourced=scoreOpportunity({price:30,active:5,title:"Halloween Pumpkin Lights",supplierCost:7,shipping:2,sold:20},{market:"US",season:"Halloween"});
 assert.ok(sourced.score>score.score);
 assert.ok(sourced.reasons.some((r)=>/supplier|margin|profit/i.test(r)));
+
+assert.ok(extractTrendTerms("LED Halloween Pumpkin Lights").includes("pumpkin"));
+const trends=rankTrendProducts([
+  {title:"LED Pumpkin Lights",price:20},
+  {title:"Pumpkin Garden Lights",price:30},
+  {title:"Stainless Bottle",price:15}
+]);
+assert.equal(trends[0].term,"pumpkin");
+assert.equal(trends[0].listings,2);
+assert.equal(trends[0].avgPrice,25);
 console.log("opportunity scoring tests passed");
