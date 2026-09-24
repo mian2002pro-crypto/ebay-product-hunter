@@ -29,10 +29,22 @@ assert.equal(trends[0].term,"pumpkin");
 assert.equal(trends[0].listings,2);
 assert.equal(trends[0].avgPrice,25);
 
+const repeated=rankTrendProducts([{title:"Pumpkin Pumpkin Lights",price:20}]);
+assert.equal(repeated.find(x=>x.term==="pumpkin").listings,1);
+
+const zeroPrice=scoreOpportunity({price:0,active:1,title:"Supplier item",supplierCost:2,shipping:1});
+assert.equal(Number.isNaN(zeroPrice.score),false);
+assert.equal(typeof zeroPrice.score,"number");
+
 const movement=compareTrendSnapshots(
   [{term:"pumpkin",listings:10,avgPrice:20},{term:"ornament",listings:4,avgPrice:15}],
   [{term:"pumpkin",listings:15,avgPrice:22},{term:"ornament",listings:2,avgPrice:15}]
 );
 assert.equal(movement.find(x=>x.term==="pumpkin").direction,"Rising");
 assert.equal(movement.find(x=>x.term==="ornament").direction,"Falling");
+assert.equal(movement.find(x=>x.term==="pumpkin").listingChange,5);
 console.log("opportunity scoring tests passed");
+
+const disappeared=compareTrendSnapshots([{term:"oldterm",listings:8,avgPrice:10}],[]);
+assert.equal(disappeared.find(x=>x.term==="oldterm").direction,"Falling");
+assert.equal(disappeared.find(x=>x.term==="oldterm").listingChange,-8);
