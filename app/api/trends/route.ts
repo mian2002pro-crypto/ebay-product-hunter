@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 const { getTrendDb } = require("../../../../lib/trend-db.js");
 const { getPreviousTrendSnapshot, saveTrendSnapshot } = require("../../../../lib/trend-store.js");
 const { compareTrendSnapshots } = require("../../../../lib/opportunity.js");
+const { ensureTrendSchema } = require("../../../../lib/ensure-schema.js");
 
 export async function GET(request: NextRequest) {
   const params=request.nextUrl.searchParams;
@@ -9,6 +10,7 @@ export async function GET(request: NextRequest) {
   const query=params.get("q")||"";
   try{
     const db=getTrendDb();
+    await ensureTrendSchema(db);
     const previous=await getPreviousTrendSnapshot(db,{market,query});
     return NextResponse.json({market,query,items:previous});
   }catch(error){
@@ -24,6 +26,7 @@ export async function POST(request: NextRequest) {
     const terms=Array.isArray(body.terms)?body.terms:[];
     if(!terms.length) return NextResponse.json({error:{code:"INVALID_TRENDS",message:"terms must contain at least one trend"}},{status:400});
     const db=getTrendDb();
+    await ensureTrendSchema(db);
     const previous=await getPreviousTrendSnapshot(db,{market,query});
     const movement=compareTrendSnapshots(previous,terms);
     const saved=await saveTrendSnapshot(db,{market,query,terms});
