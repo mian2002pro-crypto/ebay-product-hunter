@@ -1,7 +1,7 @@
 const assert=require("node:assert/strict");
 const {buildSourcingQuery}=require("../lib/sourcing-query.js");
 
-const url=new URL(buildSourcingQuery({q:"halloween pumpkin lights",market:"US",minCost:3,maxCost:12}));
+const url=new URL(buildSourcingQuery({q:"halloween pumpkin lights",market:"US",minCost:3,maxCost:12}),"http://localhost");
 assert.equal(url.searchParams.get("q"),"halloween pumpkin lights");
 assert.equal(url.searchParams.get("market"),"US");
 assert.equal(url.searchParams.get("minCost"),"3");
