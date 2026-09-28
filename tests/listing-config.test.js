@@ -20,10 +20,16 @@ test("generation context preserves supplied facts and never invents missing fact
   assert.equal(result.product.title, "Example Pet Brush");
   assert.equal(result.product.price, "12.99");
   assert.match(result.rules.missingFacts, /Not Specified|omit/i);
+  assert.ok(result.profile.prompts.title);
+  assert.ok(result.profile.prompts.description);
+  assert.ok(result.profile.prompts.options);
+  assert.ok(result.profile.prompts.image);
 });
 
 test("UK profile includes the required eBay option fields", () => {
   const uk = getMarketProfile("UK");
+  assert.match(uk.prompts.description, /Country of Origin: United Kingdom/);
+  assert.match(uk.prompts.image, /1:1/);
   for (const field of ["Pattern", "Item Length", "Department", "Texture", "Features", "Number of Attachments", "Product Line", "Production Technique", "Production Style", "Set Includes"]) {
     assert.ok(uk.optionFields.includes(field), field);
   }
