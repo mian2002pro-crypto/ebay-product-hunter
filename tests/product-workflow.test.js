@@ -1,6 +1,6 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { WORKFLOW_STATES, advanceWorkflow } from "../lib/product-workflow.js";
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { WORKFLOW_STATES, advanceWorkflow } = require("../lib/product-workflow.js");
 
 test("workflow has the four listing stages", () => {
   assert.deepEqual(WORKFLOW_STATES, ["Hunted","Sourced","Listing Generated","Ready"]);
