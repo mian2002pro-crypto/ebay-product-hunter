@@ -11,12 +11,13 @@ test("buildCjProductSearchUrl maps marketplace and price filters", () => {
     page: 2,
     size: 20
   });
-  assert.match(url, /keyWord=pet+hair+remover/);
-  assert.match(url, /countryCode=US/);
-  assert.match(url, /startSellPrice=2/);
-  assert.match(url, /endSellPrice=15/);
-  assert.match(url, /page=2/);
-  assert.match(url, /size=20/);
+  const parsed = new URL(url);
+  assert.equal(parsed.searchParams.get("keyWord"), "pet hair remover");
+  assert.equal(parsed.searchParams.get("countryCode"), "US");
+  assert.equal(parsed.searchParams.get("startSellPrice"), "2");
+  assert.equal(parsed.searchParams.get("endSellPrice"), "15");
+  assert.equal(parsed.searchParams.get("page"), "2");
+  assert.equal(parsed.searchParams.get("size"), "20");
 });
 
 test("normalizeCjProducts returns stable supplier records", () => {
@@ -42,7 +43,6 @@ test("normalizeCjProducts returns stable supplier records", () => {
   assert.equal(result.items[0].currency, "USD");
   assert.equal(result.items[0].source, "CJdropshipping");
 });
-
 
 test("normalizeCjProducts supports the current V2 nested productList response", () => {
   const result = normalizeCjProducts({
