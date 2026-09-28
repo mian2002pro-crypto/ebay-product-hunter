@@ -11,8 +11,14 @@ export default function ListingStudio({product,market,onClose}:Props){
  const [output,setOutput]=useState("");
  const [copied,setCopied]=useState(false);
  const facts=useMemo(()=>JSON.stringify(context.product,null,2),[context.product]);
- const generate=()=>{
+ const generate=async()=>{
   const prompt=profile.prompts[tab];
+  setOutput("Generating...");
+  const response=await fetch("/api/listing/generate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({market,kind:tab,prompt,product})});
+  const data=await response.json();
+  if(!response.ok){setOutput(data.error||"Generation failed");return;}
+  setOutput(data.output||"");
+  return;
   if(tab==="title") setOutput(product.title+"\n\nPROMPT:\n"+prompt);
   if(tab==="description") setOutput([product.title,"","What’s the product?",product.title,"","5 FEATURES",..."1. Not Specified","2. Not Specified","3. Not Specified","4. Not Specified","5. Not Specified","","Size: Not Specified","Color: Not Specified","What’s in the package? Not Specified",market==="UK"?"Country of Origin: United Kingdom":"" ,"",prompt].filter(Boolean).join("\n"));
   if(tab==="options") setOutput(profile.optionFields.map(field=>field+": Not Specified").join("\n")+"\n\nRULE:\n"+prompt);
