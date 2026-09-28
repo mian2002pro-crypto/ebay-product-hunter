@@ -1,6 +1,6 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { recordListingOutput } from "../lib/product-workflow.js";
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { recordListingOutput } = require("../lib/product-workflow.js");
 
 test("partial listing output keeps product sourced", () => {
   const product = { status:"Sourced" };
