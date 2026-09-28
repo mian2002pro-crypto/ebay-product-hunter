@@ -6,5 +6,5 @@ assert.equal(MARKETPLACES.US,"EBAY_US");
 assert.equal(url.searchParams.get("q"),"halloween lights");
 assert.equal(url.searchParams.get("limit"),"25");
 assert.match(url.searchParams.get("filter"),/price:\[10\.\.50\]/);
-assert.equal(url.searchParams.get("priceCurrency"),"USD");
+assert.match(url.searchParams.get("filter"),/priceCurrency:USD/);
 console.log("eBay query builder tests passed");
