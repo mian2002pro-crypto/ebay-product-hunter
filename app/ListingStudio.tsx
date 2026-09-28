@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { buildGenerationContext, getMarketProfile } from "../shared/listing-config";
+import { buildGenerationContext, getMarketProfile } from "../shared/listing-config";\nimport { recordListingOutput } from "../lib/product-workflow";
 type Product={id:string;title:string;price:number;currency:string;market:string;url:string;image:string;condition?:string};
 type Props={product:Product;market:string;onClose:()=>void};
 type Tab="title"|"description"|"options"|"image";
