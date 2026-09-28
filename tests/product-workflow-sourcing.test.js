@@ -1,6 +1,6 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { markSourced } from "../lib/product-workflow.js";
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { markSourced } = require("../lib/product-workflow.js");
 
 test("supplier match marks product sourced and preserves supplier facts", () => {
   const product = { id:"1", title:"Pet Brush", status:"Hunted" };
