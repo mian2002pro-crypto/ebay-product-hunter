@@ -1,6 +1,6 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { buildGenerationRequest } from "../lib/listing-generation.js";
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { buildGenerationRequest } = require("../lib/listing-generation.js");
 
 test("builds a server-side generation request from market prompt and product facts", () => {
   const request = buildGenerationRequest({
