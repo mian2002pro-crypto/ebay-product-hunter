@@ -6,7 +6,7 @@ const MARKETS = new Set(["US", "UK", "CA", "AU", "DE", "FR", "IT", "ES"]);
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const market = (params.get("market") || "US").toUpperCase();
-  const provider = (params.get("provider") || "cj").toLowerCase();
+  const provider = (params.get("provider") || "local").toLowerCase();
   const q = params.get("q") || "";
   const minCost = params.get("minCost");
   const maxCost = params.get("maxCost");
