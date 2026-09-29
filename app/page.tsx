@@ -62,13 +62,13 @@ export default function Home(){
   useEffect(()=>{load();},[country]);
   useEffect(()=>{const t=setTimeout(()=>{if(q.trim())load();},450);return()=>clearTimeout(t);},[q]);
 
+  const economics=(p:Product)=>{const s=supplier[p.id];if(!s)return null;const fee=p.price*(feeRate/100);const profit=p.price-fee-s.price-shipping;return {fee,profit,margin:p.price>0?profit/p.price:0};};
+  const toggleSaved=(id:string)=>setSaved(x=>x.includes(id)?x.filter(v=>v!==id):[...x,id]);
+
   const filtered=useMemo(()=>{
     let rows=products.filter(p=>(season==="All"||p.season===season)&&(view!=="saved"||saved.includes(p.id)));
     return [...rows].filter(p=>{const e=economics(p);return !e||e.profit>=minProfit;}).sort((a,b)=>sort==="price"?b.price-a.price:sort==="title"?a.title.localeCompare(b.title):b.price-a.price);
-  },[products,season,view,saved,sort]);
-
-  const toggleSaved=(id:string)=>setSaved(x=>x.includes(id)?x.filter(v=>v!==id):[...x,id]);
-  const economics=(p:Product)=>{const s=supplier[p.id];if(!s)return null;const fee=p.price*(feeRate/100);const profit=p.price-fee-s.price-shipping;return {fee,profit,margin:p.price>0?profit/p.price:0};};
+  },[products,season,view,saved,sort,supplier,feeRate,shipping,minProfit]);
   const money=(p:{price:number;currency:string})=>new Intl.NumberFormat(undefined,{style:"currency",currency:p.currency||"USD"}).format(p.price);
 
   return <main>
