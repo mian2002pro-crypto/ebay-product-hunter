@@ -22,6 +22,7 @@ export default function Home(){
   const[saved,setSaved]=useState<string[]>([]);
   const[loading,setLoading]=useState(false);
   const[error,setError]=useState("");
+  const[loadVersion,setLoadVersion]=useState(0);
   const[supplier,setSupplier]=useState<Record<string,Supplier>>({});
   const[supplierLoading,setSupplierLoading]=useState<string | null>(null);
   const[shipping,setShipping]=useState(0);
@@ -32,7 +33,7 @@ export default function Home(){
   const findSupplier=async(p:Product)=>{
     setSupplierLoading(p.id);
     try{
-      const params=new URLSearchParams({provider:"cj",market:country,q:p.title,size:"5"});
+      const params=new URLSearchParams({provider:"local",market:country,q:p.title,size:"5"});
       const response=await fetch(`/api/sourcing/search?${params.toString()}`,{cache:"no-store"});
       const data=await response.json();
       if(!response.ok) throw new Error(data.error?.message||"Supplier search failed");
@@ -59,7 +60,7 @@ export default function Home(){
     finally{setLoading(false);}
   };
 
-  useEffect(()=>{load();},[country]);
+  useEffect(()=>{setLoadVersion(v=>v+1);load();},[country]);
   useEffect(()=>{const t=setTimeout(()=>{if(q.trim())load();},450);return()=>clearTimeout(t);},[q]);
 
   const economics=(p:Product)=>{const s=supplier[p.id];if(!s)return null;const fee=p.price*(feeRate/100);const profit=p.price-fee-s.price-shipping;return {fee,profit,margin:p.price>0?profit/p.price:0};};
