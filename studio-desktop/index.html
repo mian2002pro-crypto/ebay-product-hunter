@@ -1,0 +1,6 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Miaan AI Listing Studio</title><link rel="stylesheet" href="style.css"></head>
+<body><aside><h1>MIAAN</h1><p>AI LISTING STUDIO</p><button class="nav active" data-view="studio">Studio</button><button class="nav" data-view="settings">Prompt Settings</button></aside>
+<main><header><div><small id="marketLabel">USA</small><h2>Miaan AI Listing Studio</h2></div><select id="market"><option value="US">🇺🇸 USA</option><option value="UK">🇬🇧 UK</option></select></header>
+<section id="studioView"><div class="card"><label>Product Title</label><input id="title" placeholder="Paste or import product title"><label>Product Facts</label><textarea id="facts" placeholder="Paste supplied product specifications/facts only"></textarea><button id="generate">Generate Listing Package</button></div><div class="card"><h3>Outputs</h3><pre id="output">Generated output will appear here.</pre></div></section>
+<section id="settingsView" hidden><div class="card"><h3>Saved Prompts</h3><p>USA and UK prompts are stored independently on this PC.</p><div id="promptFields"></div><button id="save">Save Prompts</button><span id="saved"> </span></div></section></main><script type="module" src="renderer.js"></script></body></html>
