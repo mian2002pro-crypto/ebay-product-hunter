@@ -27,7 +27,7 @@ export default function ListingStudio({product,market,onClose}:Props){
   return;
   if(tab==="title") setOutput(product.title+"\n\nPROMPT:\n"+prompt);
   if(tab==="description") setOutput([product.title,"","What’s the product?",product.title,"","5 FEATURES",..."1. Not Specified","2. Not Specified","3. Not Specified","4. Not Specified","5. Not Specified","","Size: Not Specified","Color: Not Specified","What’s in the package? Not Specified",market==="UK"?"Country of Origin: United Kingdom":"" ,"",prompt].filter(Boolean).join("\n"));
-  if(tab==="options") setOutput(profile.optionFields.map(field=>field+": Not Specified").join("\n")+"\n\nRULE:\n"+prompt);
+  if(tab==="options") setOutput(profile.optionFields.map((field: string)=>field+": Not Specified").join("\n")+"\n\nRULE:\n"+prompt);
   if(tab==="image") setOutput(prompt+"\n\nPRODUCT SOURCE:\n"+facts);
  };
  const copy=async()=>{await navigator.clipboard?.writeText(output);setCopied(true);setTimeout(()=>setCopied(false),1200)};
