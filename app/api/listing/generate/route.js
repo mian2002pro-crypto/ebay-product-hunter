@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildGenerationRequest } from "../../../../lib/listing-generation.js";
+import { buildGenerationRequest } from "../../../../lib/listing-generation.js";\nimport { localGenerate } from "../../../../lib/local-listing-generation.js";
 
 export async function POST(request) {
   try {
