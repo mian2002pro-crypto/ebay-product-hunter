@@ -1,19 +1,25 @@
 "use client";
 import { useMemo, useState } from "react";
-import { buildGenerationContext, getMarketProfile } from "../shared/listing-config";\nimport { recordListingOutput } from "../lib/product-workflow";
+import { buildGenerationContext, getMarketProfile } from "../shared/listing-config";
+import { recordListingOutput } from "../lib/product-workflow";
 type Product={id:string;title:string;price:number;currency:string;market:string;url:string;image:string;condition?:string};
 type Props={product:Product;market:string;onClose:()=>void};
 type Tab="title"|"description"|"options"|"image";
 export default function ListingStudio({product,market,onClose}:Props){
- const [activeMarket,setActiveMarket]=useState(market);\n const profile=getMarketProfile(activeMarket);
+ const [activeMarket,setActiveMarket]=useState(market);
+ const profile=getMarketProfile(activeMarket);
  const context=useMemo(()=>buildGenerationContext(activeMarket,product),[activeMarket,product]);
  const [tab,setTab]=useState<Tab>("title");
  const [output,setOutput]=useState("");
- const [copied,setCopied]=useState(false);\n const [busy,setBusy]=useState(false);\n const [outputs,setOutputs]=useState<Record<string,string>>({});\n const [marketOutputs,setMarketOutputs]=useState<Record<string,Record<string,string>>>({});
+ const [copied,setCopied]=useState(false);
+ const [busy,setBusy]=useState(false);
+ const [outputs,setOutputs]=useState<Record<string,string>>({});
+ const [marketOutputs,setMarketOutputs]=useState<Record<string,Record<string,string>>>({});
  const facts=useMemo(()=>JSON.stringify(context.product,null,2),[context.product]);
  const generate=async()=>{
   const prompt=profile.prompts[tab];
-  setBusy(true);\n  setOutput(marketOutputs[activeMarket]?.[tab]||"Generating...");
+  setBusy(true);
+  setOutput(marketOutputs[activeMarket]?.[tab]||"Generating...");
   const response=await fetch("/api/listing/generate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({market:activeMarket,kind:tab,prompt,product})});
   const data=await response.json();
   if(!response.ok){setOutput(data.error||"Generation failed");setBusy(false);return;}
