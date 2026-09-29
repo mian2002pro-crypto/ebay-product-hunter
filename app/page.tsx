@@ -21,8 +21,8 @@ export default function Home(){
   const[products,setProducts]=useState<Product[]>([]);
   const[saved,setSaved]=useState<string[]>([]);
   const[loading,setLoading]=useState(false);
-  const[error,setError]=useState("");\n  const[dataSource,setDataSource]=useState("Reference");
-  const[loadVersion,setLoadVersion]=useState(0);
+  const[error,setError]=useState("");
+  const[dataSource,setDataSource]=useState("Reference");
   const[supplier,setSupplier]=useState<Record<string,Supplier>>({});
   const[supplierLoading,setSupplierLoading]=useState<string | null>(null);
   const[shipping,setShipping]=useState(0);
