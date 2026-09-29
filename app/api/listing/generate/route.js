@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { buildGenerationRequest } from "../../../../lib/listing-generation.js";\nimport { localGenerate } from "../../../../lib/local-listing-generation.js";
+import { buildGenerationRequest } from "../../../../lib/listing-generation.js";
+import { localGenerate } from "../../../../lib/local-listing-generation.js";
 
 export async function POST(request) {
   try {
@@ -10,7 +11,7 @@ export async function POST(request) {
     }
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "AI generation is not configured. Add OPENAI_API_KEY on the server." }, { status: 503 });
+      return NextResponse.json({ output: localGenerate({ market, kind, product, prompt }), mode: "local" });
     }
     const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
     const payload = buildGenerationRequest({ market, kind, prompt, product });
