@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 const { getTrendDb } = require("../../../lib/trend-db.js");
-const { getPreviousTrendSnapshot, saveTrendSnapshot } = require("../../../../lib/trend-store.js");
+const { getPreviousTrendSnapshot, saveTrendSnapshot } = require("../../../lib/trend-store.js");
 const { compareTrendSnapshots } = require("../../../../lib/opportunity.js");
 const { ensureTrendSchema } = require("../../../../lib/ensure-schema.js");
 
