@@ -1,6 +1,5 @@
 "use client";
-import { advanceWorkflow, createWorkflowProduct } from "../lib/product-workflow";
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useMemo,useRef,useState} from "react";
 import {Search,TrendingUp,Package,ShoppingCart,Bookmark,ArrowUpRight,RefreshCw,ExternalLink,Sparkles} from "lucide-react";
 import ListingStudio from "./ListingStudio";
 import "./studio.css";
@@ -24,11 +23,12 @@ export default function Home(){
   const[error,setError]=useState("");
   const[dataSource,setDataSource]=useState("Reference");
   const[supplier,setSupplier]=useState<Record<string,Supplier>>({});
-  const[supplierLoading,setSupplierLoading]=useState<string | null>(null);
+  const[supplierLoading,setSupplierLoading]=useState<string|null>(null);
   const[shipping,setShipping]=useState(0);
   const[feeRate,setFeeRate]=useState(13);
   const[minProfit,setMinProfit]=useState(0);
   const[studioProduct,setStudioProduct]=useState<Product|null>(null);
+  const requestId=useRef(0);
 
   const findSupplier=async(p:Product)=>{
     setSupplierLoading(p.id);setError("");
@@ -36,32 +36,37 @@ export default function Home(){
       const params=new URLSearchParams({provider:"aliexpress",market:country,q:p.title});
       const response=await fetch(`/api/sourcing/search?${params.toString()}`,{cache:"no-store"});
       const data=await response.json();
-      if(!response.ok) throw new Error(data.error?.message||"AliExpress sourcing failed");
+      if(!response.ok)throw new Error(data.error?.message||"AliExpress sourcing failed");
       const match=data.items?.[0];
-      if(match) setSupplier(x=>({...x,[p.id]:match}));
+      if(match)setSupplier(x=>({...x,[p.id]:match}));
     }catch(e){setError(e instanceof Error?e.message:"AliExpress sourcing failed");}
     finally{setSupplierLoading(null);}
   };
 
   const load=async()=>{
+    const id=++requestId.current;
     setLoading(true);setError("");
     try{
-      const params=new URLSearchParams({market:country,q:q.trim(),limit:"50"});
+      const params=new URLSearchParams({market:country,q:q.trim(),limit:"50",refresh:String(Date.now())});
       const response=await fetch(`/api/ebay/search?${params.toString()}`,{cache:"no-store"});
       const data=await response.json();
-      if(!response.ok) throw new Error(data.error||"Unable to load eBay data");
-      setProducts(data.items||[]);setDataSource(data.liveWeb?"Live web":"Reference");
+      if(!response.ok)throw new Error(data.error||"Unable to load eBay data");
+      if(id!==requestId.current)return;
+      setProducts(data.items||[]);
+      setDataSource(data.liveWeb?"Live web":"Reference");
       const counts=new Map<string,{term:string;listings:number;total:number;season:string}>();
       (data.items||[]).forEach((p:Product)=>String(p.title).toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter((w:string)=>w.length>=4&&!["with","and","for","the","new","set","from","inch","of","in","on","to"].includes(w)).forEach((term:string)=>{const x=counts.get(term)||{term,listings:0,total:0,season:p.season};x.listings++;x.total+=p.price||0;counts.set(term,x);}));
       const current=[...counts.values()].map(x=>({term:x.term,listings:x.listings,avgPrice:Number((x.total/x.listings).toFixed(2)),season:x.season})).sort((a,b)=>b.listings-a.listings).slice(0,20);
-      const trendResponse=await fetch("/api/trends",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({market:country,query:q.trim(),terms:current}),cache:"no-store"});
-      if(trendResponse.ok){const trendData=await trendResponse.json();setTrendTerms((trendData.items||[]).slice(0,12));}else{setTrendTerms(current.slice(0,12));}
-    }catch(e){setProducts([]);setError(e instanceof Error?e.message:"Unable to load eBay data");}
-    finally{setLoading(false);}
+      const trendResponse=await fetch("/api/trends",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({market:country,query:q.trim(),terms:current,refresh:Date.now()}),cache:"no-store"});
+      if(id!==requestId.current)return;
+      if(trendResponse.ok){const trendData=await trendResponse.json();setTrendTerms((trendData.items||[]).slice(0,12));}else setTrendTerms(current.slice(0,12));
+    }catch(e){
+      if(id===requestId.current){setProducts([]);setError(e instanceof Error?e.message:"Unable to load eBay data");}
+    }finally{if(id===requestId.current)setLoading(false);}
   };
 
   useEffect(()=>{load();},[country]);
-  useEffect(()=>{const t=setTimeout(()=>{if(q.trim())load();},450);return()=>clearTimeout(t);},[q]);
+  useEffect(()=>{const t=setTimeout(()=>{if(q.trim())load();else setTrendTerms([]);},450);return()=>clearTimeout(t);},[q]);
 
   const economics=(p:Product)=>{const s=supplier[p.id];if(!s||s.price==null||!Number.isFinite(Number(s.price)))return null;const fee=p.price*(feeRate/100);const profit=p.price-fee-Number(s.price)-shipping;return {fee,profit,margin:p.price>0?profit/p.price:0};};
   const toggleSaved=(id:string)=>setSaved(x=>x.includes(id)?x.filter(v=>v!==id):[...x,id]);
@@ -81,14 +86,15 @@ export default function Home(){
     <section className="content">
       <header><div><p className="eyebrow">MARKET RESEARCH: {country}</p><h1>{view==="hunter"?"Find eBay products":view==="trending"?"Trending keywords":"Product Intelligence"}</h1><p className="muted">{dataSource==="Live web"?"Direct eBay web research without the eBay API.":"Reference catalog fallback; not verified live eBay sales."}</p></div><button className="primary" onClick={load} disabled={loading}><RefreshCw className={loading?"spin":""}/>{loading?"Loading":"Refresh data"}</button></header>
       <div className="stats"><div><TrendingUp/><span>Research listings</span><strong>{products.length}</strong></div><div><ArrowUpRight/><span>Avg opportunity</span><strong>{products.length?Math.round(products.reduce((a,p)=>a+(p.opportunityScore||0),0)/products.length):0}</strong></div><div><ShoppingCart/><span>Market</span><strong>{country}</strong></div><div><Package/><span>Saved</span><strong>{saved.length}</strong></div><div><ArrowUpRight/><span>Data status</span><strong>{error?"Error":dataSource}</strong></div></div>
-      {view==="trending"&&<div className="trend-grid">{trendTerms.map(t=><div className="trend-card" key={t.term}><b>{t.term}</b><span>{t.listings} listings · {t.season}</span><strong>{money({price:t.avgPrice,currency:"USD"})} avg.</strong>{t.direction&&<small className={t.direction==="Rising"?"trend-up":t.direction==="Falling"?"trend-down":"trend-flat"}>{t.direction} {t.listingChange!==undefined&&t.changePercent!==undefined?`· ${t.listingChange>=0?"+":""}${t.listingChange} (${t.changePercent}%)`:""}</small>}</div>)}</div>}
+      {view==="trending"&&<div className="trend-grid">{trendTerms.map(t=><div className="trend-card" key={t.term}><b>{t.term}</b><span>{t.listings} listings · {t.season}</span><strong>{money({price:t.avgPrice,currency:country==="UK"?"GBP":country==="CA"?"CAD":country==="AU"?"AUD":["DE","FR","IT","ES"].includes(country)?"EUR":"USD"})} avg.</strong>{t.direction&&<small className={t.direction==="Rising"?"trend-up":t.direction==="Falling"?"trend-down":"trend-flat"}>{t.direction} {t.listingChange!==undefined&&t.changePercent!==undefined?` · ${t.listingChange>=0?"+":""}${t.listingChange} (${t.changePercent}%)`:""}</small>}</div>)}</div>}
       <div className="toolbar"><div className="search"><Search/><input placeholder="Search eBay products or keywords..." value={q} onChange={e=>setQ(e.target.value)}/></div><select value={season} onChange={e=>setSeason(e.target.value)}>{seasons.map(s=><option key={s}>{s}</option>)}</select><div className="profit-settings"><label>Fee % <input type="number" min="0" max="100" value={feeRate} onChange={e=>setFeeRate(Number(e.target.value))}/></label><label>Ship <input type="number" min="0" value={shipping} onChange={e=>setShipping(Number(e.target.value))}/></label><label>Min profit <input type="number" min="0" value={minProfit} onChange={e=>setMinProfit(Number(e.target.value))}/></label></div></div>
       {error&&<div className="notice"><b>Research search error</b><span>{error}</span><small>No eBay API credentials are required for this mode.</small></div>}
-      <div className="sectionhead"><div><h2>Product research opportunities</h2><p>{filtered.length} matching active listings</p></div><select value={sort} onChange={e=>setSort(e.target.value)}><option value="price">Sort: Price</option><option value="title">Sort: Title</option></select></div>
+      <div className="sectionhead"><div><h2>Product research opportunities</h2><p>{filtered.length} matching research listings</p></div><select value={sort} onChange={e=>setSort(e.target.value)}><option value="price">Sort: Price</option><option value="title">Sort: Title</option></select></div>
       <div className="table"><div className="thead"><span>PRODUCT</span><span>PRICE</span><span>STATUS</span><span>SELLER</span><span>DEMAND</span><span>SOURCE</span><span></span><span></span></div>
       {filtered.map(p=><div className="row" key={p.id}><div className="product">{p.image?<img className="thumbimg" src={p.image} alt=""/>:<div className="thumb">{p.title.slice(0,2).toUpperCase()}</div>}<div><b>{p.title}</b><small>{p.condition||"Listing"} · {p.market}</small></div></div><strong>{money(p)}</strong><span className="live">RESEARCH</span><span>{p.seller||"—"}</span><span className="score">{p.opportunityScore??"—"}</span><span className={supplier[p.id]?"profit":"unknown"}>{(()=>{const e=economics(p);const s=supplier[p.id];return e?`${e.profit>=0?"+":""}${money({price:e.profit,currency:p.currency})} · ${Math.round(e.margin*100)}%`:s?<a href={s.url} target="_blank" rel="noreferrer">Open AliExpress search</a>:"No supplier cost yet"})()}</span><button className="supplier-btn" onClick={()=>findSupplier(p)} disabled={supplierLoading===p.id}>{supplierLoading===p.id?"Opening…":"AliExpress source"}</button><button className="supplier-btn" onClick={()=>setStudioProduct(p)}><Sparkles size={13}/> Studio</button>{p.url&&<a className="icon" href={p.url} target="_blank" rel="noreferrer" title="Open source listing"><ExternalLink size={17}/></a>}<button className="icon" onClick={()=>toggleSaved(p.id)} title="Save"><Bookmark size={17} fill={saved.includes(p.id)?"currentColor":"none"}/></button></div>)}
       {!loading&&!filtered.length&&!error&&<div className="empty">No matching listings. Try another keyword or market.</div>}
       </div>
     </section>
-  </main>
+    {studioProduct&&<ListingStudio product={studioProduct} market={country} onClose={()=>setStudioProduct(null)}/>}
+  </main>;
 }
