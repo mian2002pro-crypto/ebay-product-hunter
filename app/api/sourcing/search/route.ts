@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-const { searchSuppliers } = require("../../../lib/supplier-search.js");
+const { searchSuppliers } = require("../../../../lib/supplier-search.js");
 
 const MARKETS = new Set(["US", "UK", "CA", "AU", "DE", "FR", "IT", "ES"]);
 
