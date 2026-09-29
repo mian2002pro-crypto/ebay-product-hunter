@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Miaan eBay Hunter & Sourcer",
+  "version": "0.1.0",
+  "description": "Research eBay listings and open AliExpress sourcing searches without requiring eBay or AliExpress APIs.",
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": ["https://www.ebay.com/*", "https://www.ebay.co.uk/*", "https://www.ebay.ca/*", "https://www.ebay.com.au/*", "https://www.ebay.de/*", "https://www.ebay.fr/*", "https://www.ebay.it/*", "https://www.ebay.es/*", "https://www.aliexpress.com/*"],
+  "action": {"default_title": "Miaan Hunter", "default_popup": "popup.html"},
+  "background": {"service_worker": "background.js", "type": "module"},
+  "content_scripts": [{"matches": ["https://www.ebay.*/*"], "js": ["content.js"], "run_at": "document_idle"}]
+}
