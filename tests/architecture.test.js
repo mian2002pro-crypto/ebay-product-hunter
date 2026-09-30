@@ -145,7 +145,7 @@ test("AliExpress capture keeps product picture and video downloads enabled indep
   assert.match(popup, /source === "AliExpress"/);
   assert.match(popup, /Download All Product Pictures/);
   assert.match(popup, /current\.images \|\| \[\]/);
-  assert.match(popup, /current\.videos \|\| \[\]/);
+  assert.match(popup, /current\?\.videos \|\| \[\]/);
   assert.match(popup, /MIAN_EXTRACT_ALI_PRODUCT/);
   assert.match(ali, /video, video source/);
   assert.match(ali, /og:video/);
