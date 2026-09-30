@@ -85,11 +85,12 @@
       .map((item) => item.url)
       .filter((url, index, list) => list.indexOf(url) === index);
 
+    const videoRoot = root.querySelectorAll("video, video source").length ? root : document;
     const videos = [
-      ...[...root.querySelectorAll("video, video source")].map((node) =>
+      ...[...videoRoot.querySelectorAll("video, video source")].map((node) =>
         node?.currentSrc || node?.src || node?.getAttribute("src") || node?.getAttribute("data-src") || ""
       ),
-      ...[...root.querySelectorAll("meta[property='og:video'], meta[property='og:video:url'], meta[property='og:video:secure_url']")]
+      ...[...document.querySelectorAll("meta[property='og:video'], meta[property='og:video:url'], meta[property='og:video:secure_url']")]
         .map((node) => node?.getAttribute("content") || "")
     ]
       .filter((url) => /^https?:\/\//i.test(url))
