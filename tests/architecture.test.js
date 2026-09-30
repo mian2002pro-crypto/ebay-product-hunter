@@ -85,3 +85,55 @@ test("Hunter supports product media downloads", () => {
   assert.match(popup, /Download Selected Picture/);
   assert.match(popup, /Download Video/);
 });
+
+
+test("AliExpress Hunter loads a product extractor and keeps product images separate from recommendations", () => {
+  const vm = require("node:vm");
+  const manifest = JSON.parse(fs.readFileSync("extension/manifest.json", "utf8"));
+  const aliScript = fs.readFileSync("extension/aliexpress-content.js", "utf8");
+  const aliContentScript = manifest.content_scripts.find((item) => item.js?.includes("aliexpress-content.js"));
+  assert.ok(aliContentScript?.matches.includes("https://www.aliexpress.com/*"));
+  assert.match(aliScript, /all-product-gallery-and-variation-images/);
+  assert.match(aliScript, /recommend|related|similar/i);
+
+  const makeImage = (url, className) => ({
+    currentSrc: url,
+    getAttribute: (name) => name === "src" ? url : null,
+    getBoundingClientRect: () => ({width: 500, height: 500}),
+    className,
+    parentElement: null
+  });
+  const productA = makeImage("https://ae01.alicdn.com/kf/product-a.jpg", "product-gallery-image");
+  const productB = makeImage("https://ae01.alicdn.com/kf/variation-b.jpg", "sku-variation-image");
+  const related = makeImage("https://ae01.alicdn.com/kf/related.jpg", "recommend-product-image");
+
+  const root = {
+    querySelectorAll(selector) {
+      if (selector === "img") return [productA, productB, related];
+      if (selector.includes("price")) return [];
+      return [];
+    }
+  };
+  const document = {
+    images: [productA, productB, related],
+    querySelector(selector) {
+      if (selector === "main") return root;
+      if (selector === "h1") return {textContent: "Ali Product Test"};
+      return null;
+    }
+  };
+  const messages = {};
+  vm.runInNewContext(aliScript, {
+    document,
+    location: {href: "https://www.aliexpress.com/item/1000001.html?spm=test"},
+    chrome: {runtime: {onMessage: {addListener: (handler) => { messages.handler = handler; }}}}
+  });
+
+  let response;
+  messages.handler({type: "MIAN_EXTRACT_ALI_PRODUCT"}, {}, (value) => { response = value; });
+  assert.equal(response.ok, true);
+  assert.deepEqual(Array.from(response.product.images), [
+    "https://ae01.alicdn.com/kf/product-a.jpg",
+    "https://ae01.alicdn.com/kf/variation-b.jpg"
+  ]);
+});
