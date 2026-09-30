@@ -13,6 +13,21 @@
     .replace(/_(?:50x50|80x80|100x100|120x120|150x150|220x220|300x300|400x400)\.(jpg|jpeg|png|webp)/i, ".$1")
     .replace(/\.\d+x\d+\.(jpg|jpeg|png|webp)/i, ".$1");
 
+  const isRecommendationImage = (img) => {
+    const context = [
+      String(img.className || "").toLowerCase(),
+      String(img.getAttribute?.("data-testid") || "").toLowerCase(),
+      String(img.getAttribute?.("aria-label") || "").toLowerCase()
+    ];
+    let node = img.parentElement;
+    for (let i = 0; node && i < 5; i++, node = node.parentElement) {
+      context.push(String(node.className || "").toLowerCase());
+      context.push(String(node.getAttribute?.("data-testid") || "").toLowerCase());
+      context.push(String(node.getAttribute?.("aria-label") || "").toLowerCase());
+    }
+    return /(recommend|related|similar|feed|suggest)/i.test(context.join(" "));
+  };
+
   const scoreImage = (img) => {
     let score = 0;
     const rect = img.getBoundingClientRect();
@@ -57,6 +72,7 @@
 
     const candidates = [...root.querySelectorAll("img")]
       .filter((img) => isProductImage(imageUrl(img)))
+      .filter((img) => !isRecommendationImage(img))
       .map((img) => ({
         img,
         score: scoreImage(img),
