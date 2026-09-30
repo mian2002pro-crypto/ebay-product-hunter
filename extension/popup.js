@@ -4,6 +4,12 @@ const preview = document.getElementById("preview");
 const source = document.getElementById("source");
 const downloadPictures = document.getElementById("download-pictures");
 const downloadVideo = document.getElementById("download-video");
+const aliMediaControls = document.getElementById("ali-media-controls");
+const downloadMedia = document.getElementById("download-media");
+const downloadMainImages = document.getElementById("download-main-images");
+const downloadVariantImages = document.getElementById("download-variant-images");
+const downloadAllImages = document.getElementById("download-all-images");
+let selectedMediaGroup = "all";
 const mediaStatus = document.getElementById("media-status");
 const supplierSearch = document.getElementById("supplier-search");
 const openSupplier = document.getElementById("open-supplier");
@@ -27,6 +33,9 @@ function isAliProduct(product) {
 function render(product) {
   current = product;
   const images = product.images || (product.image ? [product.image] : []);
+  const mainImages = product.mainImages || (isAliProduct(product) ? images : []);
+  const variantImages = product.variantImages || [];
+  const allImages = [...new Set([...mainImages, ...variantImages, ...images])];
   const videos = product.videos || [];
   const ali = isAliProduct(product);
   const pictureText = ali
@@ -40,6 +49,22 @@ function render(product) {
   downloadPictures.disabled = images.length === 0;
   downloadVideo.disabled = videos.length === 0;
   downloadPictures.textContent = ali ? "Download All Product Pictures" : "Download Selected Picture";
+
+  aliMediaControls.hidden = !ali;
+  if (ali) {
+    downloadMainImages.textContent = "Main images (" + mainImages.length + ")";
+    downloadVariantImages.textContent = "Variant images (" + variantImages.length + ")";
+    downloadAllImages.textContent = "All (" + allImages.length + ")";
+    downloadMainImages.disabled = mainImages.length === 0;
+    downloadVariantImages.disabled = variantImages.length === 0;
+    downloadAllImages.disabled = allImages.length === 0;
+    downloadMainImages.classList.toggle("active", selectedMediaGroup === "main");
+    downloadVariantImages.classList.toggle("active", selectedMediaGroup === "variant");
+    downloadAllImages.classList.toggle("active", selectedMediaGroup === "all");
+    downloadPictures.style.display = "none";
+  } else {
+    downloadPictures.style.display = "";
+  }
   supplierSearch.innerHTML = product.title
     ? '<div class="supplier-card"><b>' + product.title.replace(/</g, "&lt;") + '</b><span>AliExpress Web Search</span><small>Supplier price not verified</small></div>'
     : '<div class="supplier-card"><span>Capture an eBay or AliExpress product first.</span></div>';
@@ -113,9 +138,9 @@ async function captureAliExpress(tab) {
 (async () => {
   const tab = await getActiveTab();
   if (isAliExpressProduct(tab)) {
-    status.textContent = "AliExpress product detected. You can download pictures or video directly — no capture or sourcing required.";
-    downloadPictures.textContent = "Download All Product Pictures";
-    downloadVideo.textContent = "Download Product Video";
+    status.textContent = "Scanning AliExpress product media…";
+    await prepareDirectMediaProduct(tab);
+    status.textContent = "AliExpress product ready. Select Main, Variant or All and press ↓.";
   }
 })();
 
@@ -149,6 +174,41 @@ async function prepareDirectMediaProduct(tab) {
   render(product);
   return product;
 }
+
+function getSelectedAliImages(product) {
+  if (!product) return [];
+  const mainImages = product.mainImages || [];
+  const variantImages = product.variantImages || [];
+  const allImages = [...new Set([...(product.images || []), ...mainImages, ...variantImages])];
+  if (selectedMediaGroup === "main") return mainImages;
+  if (selectedMediaGroup === "variant") return variantImages;
+  return allImages;
+}
+
+function selectMediaGroup(group) {
+  selectedMediaGroup = group;
+  if (current) render(current);
+}
+
+downloadMainImages.addEventListener("click", () => selectMediaGroup("main"));
+downloadVariantImages.addEventListener("click", () => selectMediaGroup("variant"));
+downloadAllImages.addEventListener("click", () => selectMediaGroup("all"));
+
+downloadMedia.addEventListener("click", async () => {
+  const tab = await getActiveTab();
+  const pageUrl = tab?.url ? tab.url.split("?")[0] : "";
+  let product = current;
+  const samePage = Boolean(product?.url && pageUrl && product.url === pageUrl);
+  if (!samePage || !isAliProduct(product)) {
+    product = await prepareDirectMediaProduct(tab);
+  }
+  const urls = getSelectedAliImages(product);
+  if (!urls.length) {
+    mediaStatus.textContent = "No images are available in the selected group.";
+    return;
+  }
+  requestDownload("picture", urls);
+});
 
 downloadPictures.addEventListener("click", async () => {
   const tab = await getActiveTab();
