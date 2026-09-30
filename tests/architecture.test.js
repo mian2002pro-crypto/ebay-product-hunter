@@ -177,3 +177,71 @@ test("Direct media workflow never saves or sources the product", () => {
   assert.ok(directSection.indexOf("MIAN_SAVE_PRODUCT") === -1);
   assert.ok(directSection.indexOf("openAliExpress") === -1);
 });
+
+
+test("AliExpress bulk media collector reads lazy/srcset product images and normalizes CDN thumbnails", () => {
+  const vm = require("node:vm");
+  const aliScript = fs.readFileSync("extension/aliexpress-content.js", "utf8");
+  const makeImage = (url, className, extra = {}) => ({
+    currentSrc: extra.currentSrc || url,
+    getAttribute: (name) => {
+      if (name === "src") return url;
+      if (name === "data-src") return extra.dataSrc || null;
+      if (name === "data-original") return extra.original || null;
+      if (name === "srcset") return extra.srcset || null;
+      return null;
+    },
+    getBoundingClientRect: () => ({width: extra.width || 80, height: extra.height || 80}),
+    className,
+    parentElement: null
+  });
+  const a = makeImage(
+    "https://ae01.alicdn.com/kf/A.jpg_50x50q75.jpg_.webp",
+    "product-gallery-thumbnail",
+    {width: 80, height: 80, original: "https://ae01.alicdn.com/kf/A.jpg"}
+  );
+  const b = makeImage(
+    "https://ae-pic-a1.aliexpress-media.com/kf/B.jpg_220x220q75.jpg_.avif",
+    "sku-variation-image",
+    {width: 90, height: 90}
+  );
+  const c = makeImage(
+    "https://ae01.alicdn.com/kf/related.jpg_220x220q75.jpg_.webp",
+    "recommend-product-image",
+    {width: 500, height: 500}
+  );
+  const root = {
+    querySelectorAll(selector) {
+      if (selector === "img") return [a, b];
+      if (selector.includes("price")) return [];
+      if (selector.includes("video")) return [];
+      return [];
+    }
+  };
+  const document = {
+    images: [a, b, c],
+    title: "Bulk Media Test",
+    body: {querySelectorAll: () => []},
+    querySelectorAll(selector) {
+      if (selector === "img") return [a, b, c];
+      return [];
+    },
+    querySelector(selector) {
+      if (selector === "main") return root;
+      if (selector === "h1") return {textContent: "Bulk Media Test"};
+      return null;
+    }
+  };
+  const messages = {};
+  vm.runInNewContext(aliScript, {
+    document,
+    location: {href: "https://www.aliexpress.com/item/1000002.html"},
+    chrome: {runtime: {onMessage: {addListener: (handler) => { messages.handler = handler; }}}}
+  });
+  let response;
+  messages.handler({type: "MIAN_EXTRACT_ALI_PRODUCT"}, {}, (value) => { response = value; });
+  assert.equal(response.ok, true, response.error || "Bulk media extraction failed");
+  assert.ok(response.product.images.some((url) => url.includes("/kf/A.jpg")));
+  assert.ok(response.product.images.some((url) => url.includes("/kf/B.jpg")));
+  assert.ok(!response.product.images.some((url) => url.includes("related.jpg")));
+});
