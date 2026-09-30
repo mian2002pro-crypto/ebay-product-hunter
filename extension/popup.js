@@ -25,8 +25,8 @@ function render(product) {
   const images = product.images || (product.image ? [product.image] : []);
   const videos = product.videos || [];
   preview.innerHTML = product.image
-    ? '<img class="thumb" src="' + product.image.replace(/"/g, "&quot;") + '"><div class="meta"><b>' + (product.title || "Untitled") + '</b><span>' + (product.priceText || "") + '</span><small>' + images.length + ' picture(s) found · ' + videos.length + ' video(s) found</small></div>'
-    : '<div class="meta"><b>' + (product.title || "Untitled") + '</b><span>' + (product.priceText || "") + '</span><small>' + images.length + ' picture(s) found · ' + videos.length + ' video(s) found</small></div>';
+    ? '<img class="thumb" src="' + product.image.replace(/"/g, "&quot;") + '"><div class="meta"><b>' + (product.title || "Untitled") + '</b><span>' + (product.priceText || "") + '</span><small>Selected picture ready · ' + videos.length + ' video(s) found</small></div>'
+    : '<div class="meta"><b>' + (product.title || "Untitled") + '</b><span>' + (product.priceText || "") + '</span><small>No selected picture detected · ' + videos.length + ' video(s) found</small></div>';
   source.disabled = !product.title;
   downloadPictures.disabled = !images.length;
   downloadVideo.disabled = !videos.length;
@@ -48,23 +48,41 @@ function requestDownload(kind, urls) {
   });
 }
 
-document.getElementById("hunt").addEventListener("click", async () => {
-  status.textContent = "Reading current eBay listing…";
+async function getActiveTab() {
   const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-  if (!tab?.id) return;
-  chrome.tabs.sendMessage(tab.id, {type: "MIAN_EXTRACT_LISTING"}, (response) => {
+  return tab?.id;
+}
+
+document.getElementById("hunt").addEventListener("click", async () => {
+  status.textContent = "Reading the currently selected eBay picture…";
+  const tabId = await getActiveTab();
+  if (!tabId) return;
+  chrome.tabs.sendMessage(tabId, {type: "MIAN_EXTRACT_LISTING"}, (response) => {
     if (chrome.runtime.lastError || !response?.ok) {
       status.textContent = "Open an eBay listing page first.";
       return;
     }
     render(response.listing);
     chrome.runtime.sendMessage({type: "MIAN_SAVE_PRODUCT", product: response.listing}, (saved) => {
-      status.textContent = saved?.ok ? "Listing captured and saved." : "Captured, but save failed.";
+      status.textContent = saved?.ok ? "Listing captured with the selected picture." : "Captured, but save failed.";
     });
   });
 });
 
-downloadPictures.addEventListener("click", () => requestDownload("picture", current?.images || []));
+downloadPictures.addEventListener("click", async () => {
+  const tabId = await getActiveTab();
+  if (!tabId) return;
+  chrome.tabs.sendMessage(tabId, {type: "MIAN_GET_SELECTED_IMAGE"}, (response) => {
+    if (chrome.runtime.lastError || !response?.ok || !response.image) {
+      mediaStatus.textContent = "Select/open a picture on eBay first.";
+      return;
+    }
+    current = {...current, image: response.image, images: [response.image]};
+    render(current);
+    requestDownload("picture", [response.image]);
+  });
+});
+
 downloadVideo.addEventListener("click", () => requestDownload("video", current?.videos || []));
 
 function openAliExpress() {
