@@ -137,3 +137,17 @@ test("AliExpress Hunter loads a product extractor and keeps product images separ
     "https://ae01.alicdn.com/kf/variation-b.jpg"
   ]);
 });
+
+
+test("AliExpress capture keeps product picture and video downloads enabled independently of eBay selected-picture mode", () => {
+  const popup = fs.readFileSync("extension/popup.js", "utf8");
+  const ali = fs.readFileSync("extension/aliexpress-content.js", "utf8");
+  assert.match(popup, /source === "AliExpress"/);
+  assert.match(popup, /Download All Product Pictures/);
+  assert.match(popup, /current\.images \|\| \[\]/);
+  assert.match(popup, /current\.videos \|\| \[\]/);
+  assert.match(popup, /MIAN_EXTRACT_ALI_PRODUCT/);
+  assert.match(ali, /video, video source/);
+  assert.match(ali, /og:video/);
+  assert.match(ali, /videos,/);
+});
