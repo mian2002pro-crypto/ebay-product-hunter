@@ -151,3 +151,23 @@ test("AliExpress capture keeps product picture and video downloads enabled indep
   assert.match(ali, /og:video/);
   assert.match(ali, /videos,/);
 });
+
+
+test("AliExpress media downloads work directly without capture or sourcing first", () => {
+  const popup = fs.readFileSync("extension/popup.html", "utf8");
+  const script = fs.readFileSync("extension/popup.js", "utf8");
+  assert.doesNotMatch(popup, /id="download-pictures" disabled/);
+  assert.doesNotMatch(popup, /id="download-video" disabled/);
+  assert.match(script, /prepareDirectMediaProduct/);
+  assert.match(script, /MIAN_EXTRACT_ALI_PRODUCT/);
+  assert.match(script, /MIAN_DOWNLOAD_MEDIA/);
+  assert.match(script, /Download All Product Pictures/);
+  assert.match(script, /Download Product Video/);
+});
+
+test("Direct media workflow never saves or sources the product", () => {
+  const script = fs.readFileSync("extension/popup.js", "utf8");
+  const directSection = script.slice(script.indexOf("async function prepareDirectMediaProduct"));
+  assert.ok(directSection.indexOf("MIAN_SAVE_PRODUCT") === -1);
+  assert.ok(directSection.indexOf("openAliExpress") === -1);
+});
