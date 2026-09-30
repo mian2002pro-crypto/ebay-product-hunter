@@ -1,63 +1,113 @@
 (() => {
-  const imageUrl = (node) => node?.currentSrc
-    || node?.getAttribute("src")
-    || node?.getAttribute("data-src")
-    || node?.getAttribute("data-lazy-src")
-    || node?.getAttribute("data-original")
-    || "";
+  const IMAGE_ATTRS = ["src", "currentSrc", "data-src", "data-lazy-src", "data-original", "data-image", "data-img", "data-url"];
 
-  const isProductImage = (url) => /(?:alicdn\.com|aliexpress-media\.com)/i.test(url)
-    && /\.(?:jpg|jpeg|png|webp)(?:[?#]|$)/i.test(url);
-
-  const upgradeImageUrl = (url) => url
-    .replace(/_(?:50x50|80x80|100x100|120x120|150x150|220x220|300x300|400x400)\.(jpg|jpeg|png|webp)/i, ".$1")
-    .replace(/\.\d+x\d+\.(jpg|jpeg|png|webp)/i, ".$1");
-
-  const isRecommendationImage = (img) => {
-    const context = [
-      String(img.className || "").toLowerCase(),
-      String(img.getAttribute?.("data-testid") || "").toLowerCase(),
-      String(img.getAttribute?.("aria-label") || "").toLowerCase()
-    ];
-    let node = img.parentElement;
-    for (let i = 0; node && i < 5; i++, node = node.parentElement) {
-      context.push(String(node.className || "").toLowerCase());
-      context.push(String(node.getAttribute?.("data-testid") || "").toLowerCase());
-      context.push(String(node.getAttribute?.("aria-label") || "").toLowerCase());
+  const rawImageUrls = (node) => {
+    if (!node) return [];
+    const urls = [];
+    for (const attr of IMAGE_ATTRS) {
+      const value = attr === "currentSrc" ? node.currentSrc : node.getAttribute?.(attr);
+      if (value) urls.push(value);
     }
-    return /(recommend|related|similar|feed|suggest)/i.test(context.join(" "));
+    const srcset = node.getAttribute?.("srcset") || node.getAttribute?.("data-srcset") || "";
+    if (srcset) {
+      srcset.split(",").forEach((part) => {
+        const url = part.trim().split(/\s+/)[0];
+        if (url) urls.push(url);
+      });
+    }
+    return urls;
   };
 
-  const scoreImage = (img) => {
-    let score = 0;
-    const rect = img.getBoundingClientRect();
-    if (rect.width >= 200 && rect.height >= 200) score += 5;
-    if (rect.width >= 400 && rect.height >= 400) score += 3;
+  const isProductImage = (url) => /(?:alicdn\.com|aliexpress-media\.com)/i.test(url)
+    && /\.(?:jpg|jpeg|png|webp|avif)(?:[?#]|$)/i.test(url);
 
+  const upgradeImageUrl = (url) => {
+    let value = String(url || "").trim();
+    value = value
+      .replace(/_(?:50x50|80x80|100x100|120x120|150x150|172x172|220x220|300x300|400x400|480x480|640x640|800x800)(?:q\d+)?\.(?:jpg|jpeg|png|webp|avif)_?\.(?:webp|avif)$/i, (match, ext) => match)
+      .replace(/_(?:50x50|80x80|100x100|120x120|150x150|172x172|220x220|300x300|400x400|480x480|640x640|800x800)(?:q\d+)?\.(jpg|jpeg|png|webp|avif)(?:_)?\.(webp|avif)$/i, ".$1")
+      .replace(/_(?:50x50|80x80|100x100|120x120|150x150|172x172|220x220|300x300|400x400|480x480|640x640|800x800)(?:q\d+)?\.(jpg|jpeg|png|webp|avif)(?:_)?$/i, ".$1")
+      .replace(/\.\d+x\d+(?:q\d+)?\.(jpg|jpeg|png|webp|avif)(?:_)?\.(webp|avif)$/i, ".$1")
+      .replace(/\.\d+x\d+(?:q\d+)?\.(jpg|jpeg|png|webp|avif)(?:_)?$/i, ".$1");
+    return value;
+  };
+
+  const contextFor = (img) => {
     const context = [
-      String(img.className || "").toLowerCase(),
-      String(img.getAttribute?.("data-testid") || "").toLowerCase(),
-      String(img.getAttribute?.("aria-label") || "").toLowerCase()
+      String(img?.className || "").toLowerCase(),
+      String(img?.getAttribute?.("data-testid") || "").toLowerCase(),
+      String(img?.getAttribute?.("aria-label") || "").toLowerCase()
     ];
-    let node = img.parentElement;
-    for (let i = 0; node && i < 5; i++, node = node.parentElement) {
+    let node = img?.parentElement;
+    for (let i = 0; node && i < 6; i++, node = node.parentElement) {
       context.push(String(node.className || "").toLowerCase());
       context.push(String(node.getAttribute?.("data-testid") || "").toLowerCase());
       context.push(String(node.getAttribute?.("aria-label") || "").toLowerCase());
     }
-    const text = context.join(" ");
-    if (/(gallery|slider|carousel|product|sku|variation|thumbnail|image)/i.test(text)) score += 6;
-    if (/(recommend|related|similar|feed|suggest)/i.test(text)) score -= 12;
+    return context.join(" ");
+  };
+
+  const isRecommendationImage = (img) => /(recommend|related|similar|feed|suggest|more-to-love|you-may-also)/i.test(contextFor(img));
+
+  const scoreImage = (img) => {
+    const rect = img?.getBoundingClientRect?.() || {width: 0, height: 0};
+    let score = 0;
+    if (rect.width >= 200 && rect.height >= 200) score += 5;
+    if (rect.width >= 400 && rect.height >= 400) score += 3;
+    if (rect.width > 0 && rect.height > 0 && rect.width < 200 && rect.height < 200) score += 1;
+    const text = contextFor(img);
+    if (/(gallery|slider|carousel|product|sku|variation|thumbnail|swatch|image)/i.test(text)) score += 6;
+    if (/(recommend|related|similar|feed|suggest|more-to-love|you-may-also)/i.test(text)) score -= 20;
     return score;
   };
 
   const productRoot = () => {
     const main = document.querySelector("main");
     if (main) return main;
-
-    const productImages = [...document.images].filter((img) => isProductImage(imageUrl(img)));
+    const productImages = [...document.images].filter((img) => isProductImage(rawImageUrls(img)[0] || ""));
     const best = productImages.sort((a, b) => scoreImage(b) - scoreImage(a))[0];
     return best?.parentElement || document.body;
+  };
+
+  const collectProductImages = (root) => {
+    const nodes = [];
+    const seenNodes = new Set();
+    const addNodes = (list) => {
+      for (const node of Array.from(list || [])) {
+        if (!seenNodes.has(node)) {
+          seenNodes.add(node);
+          nodes.push(node);
+        }
+      }
+    };
+
+    addNodes(document.images || []);
+    addNodes(document.querySelectorAll?.("img, source") || []);
+    if (root && root !== document) addNodes(root.querySelectorAll?.("img, source") || []);
+
+    const results = [];
+    for (const node of nodes) {
+      if (node.tagName && String(node.tagName).toLowerCase() === "source") {
+        const sources = rawImageUrls(node);
+        for (const url of sources) {
+          if (isProductImage(url)) results.push({node, url, score: scoreImage(node)});
+        }
+        continue;
+      }
+
+      if (isRecommendationImage(node)) continue;
+      for (const url of rawImageUrls(node)) {
+        if (!isProductImage(url)) continue;
+        const upgraded = upgradeImageUrl(url);
+        const score = scoreImage(node);
+        if (score >= 0) results.push({node, url: upgraded, score});
+      }
+    }
+
+    return results
+      .sort((a, b) => b.score - a.score)
+      .map((item) => item.url)
+      .filter((url, index, list) => list.indexOf(url) === index);
   };
 
   function extractProduct() {
@@ -70,25 +120,12 @@
       .map((node) => node.textContent?.trim())
       .find(Boolean) || "";
 
-    const candidates = [...root.querySelectorAll("img")]
-      .filter((img) => isProductImage(imageUrl(img)))
-      .filter((img) => !isRecommendationImage(img))
-      .map((img) => ({
-        img,
-        score: scoreImage(img),
-        url: upgradeImageUrl(imageUrl(img))
-      }))
-      .filter((item) => item.url && item.score >= 0);
-
-    const images = candidates
-      .sort((a, b) => b.score - a.score)
-      .map((item) => item.url)
-      .filter((url, index, list) => list.indexOf(url) === index);
+    const images = collectProductImages(root);
 
     const videoRoot = root.querySelectorAll("video, video source").length ? root : document;
     const videos = [
       ...[...videoRoot.querySelectorAll("video, video source")].map((node) =>
-        node?.currentSrc || node?.src || node?.getAttribute("src") || node?.getAttribute("data-src") || ""
+        node?.currentSrc || node?.src || node?.getAttribute?.("src") || node?.getAttribute?.("data-src") || ""
       ),
       ...(typeof document.querySelectorAll === "function"
         ? [...document.querySelectorAll("meta[property='og:video'], meta[property='og:video:url'], meta[property='og:video:secure_url']")]
