@@ -62,3 +62,20 @@ test("Sourcer UI provides direct supplier search and does not claim an unverifie
   assert.match(script, /aliexpress\.com\/w\/wholesale-/);
   assert.match(script, /price not verified/i);
 });
+
+
+test("Hunter supports product media downloads", () => {
+  const manifest = JSON.parse(fs.readFileSync("extension/manifest.json", "utf8"));
+  const background = fs.readFileSync("extension/background.js", "utf8");
+  const content = fs.readFileSync("extension/content.js", "utf8");
+  const popup = fs.readFileSync("extension/popup.html", "utf8");
+  const script = fs.readFileSync("extension/popup.js", "utf8");
+  assert.ok(manifest.permissions.includes("downloads"));
+  assert.match(content, /images/);
+  assert.match(content, /video/);
+  assert.match(background, /chrome\.downloads\.download/);
+  assert.match(background, /\.downloads/);
+  assert.match(script, /MIAN_DOWNLOAD_MEDIA/);
+  assert.match(popup, /Download Pictures/);
+  assert.match(popup, /Download Video/);
+});
