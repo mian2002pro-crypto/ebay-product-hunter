@@ -85,13 +85,24 @@
       .map((item) => item.url)
       .filter((url, index, list) => list.indexOf(url) === index);
 
+    const videos = [
+      ...[...root.querySelectorAll("video, video source")].map((node) =>
+        node?.currentSrc || node?.src || node?.getAttribute("src") || node?.getAttribute("data-src") || ""
+      ),
+      ...[...root.querySelectorAll("meta[property='og:video'], meta[property='og:video:url'], meta[property='og:video:secure_url']")]
+        .map((node) => node?.getAttribute("content") || "")
+    ]
+      .filter((url) => /^https?:\/\//i.test(url))
+      .filter((url) => /\.(?:mp4|webm|mov)(?:[?#]|$)/i.test(url) || /(?:alicdn\.com|aliexpress-media\.com)/i.test(url))
+      .filter((url, index, list) => list.indexOf(url) === index);
+
     return {
       title,
       priceText: price,
       seller: "",
       image: images[0] || "",
       images,
-      videos: [],
+      videos,
       url: location.href.split("?")[0],
       market: "aliexpress.com",
       source: "AliExpress",
