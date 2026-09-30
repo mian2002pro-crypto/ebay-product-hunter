@@ -21,6 +21,8 @@
     const price = firstText(["div.x-price-primary span", ".x-price-primary"]);
     const seller = firstText([".x-sellercard-atf__info__about-seller", ".x-sellercard-atf__info__about-seller-name"]);
     const image = firstAttr(["div.ux-image-carousel-item.active img", ".ux-image-carousel-item img", "img"], "src")
+      || firstAttr(["div.ux-image-carousel-item.active img", ".ux-image-carousel-item img", "img"], "data-src")
+      || firstAttr(["div.ux-image-carousel-item.active img", ".ux-image-carousel-item img", "img"], "data-original")
       || firstAttr(["meta[property='og:image']"], "content");
     const url = location.href.split("?")[0];
     return {
