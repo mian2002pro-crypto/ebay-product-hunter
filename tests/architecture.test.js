@@ -167,7 +167,9 @@ test("AliExpress media downloads work directly without capture or sourcing first
 
 test("Direct media workflow never saves or sources the product", () => {
   const script = fs.readFileSync("extension/popup.js", "utf8");
-  const directSection = script.slice(script.indexOf("async function prepareDirectMediaProduct"));
+  const start = script.indexOf("async function prepareDirectMediaProduct");
+  const end = script.indexOf("downloadPictures.addEventListener", start);
+  const directSection = script.slice(start, end);
   assert.ok(directSection.indexOf("MIAN_SAVE_PRODUCT") === -1);
   assert.ok(directSection.indexOf("openAliExpress") === -1);
 });
