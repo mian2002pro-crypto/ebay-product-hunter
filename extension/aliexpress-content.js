@@ -19,8 +19,12 @@
     if (rect.width >= 200 && rect.height >= 200) score += 5;
     if (rect.width >= 400 && rect.height >= 400) score += 3;
 
-    const context = [];
-    let node = img;
+    const context = [
+      String(img.className || "").toLowerCase(),
+      String(img.getAttribute?.("data-testid") || "").toLowerCase(),
+      String(img.getAttribute?.("aria-label") || "").toLowerCase()
+    ];
+    let node = img.parentElement;
     for (let i = 0; node && i < 5; i++, node = node.parentElement) {
       context.push(String(node.className || "").toLowerCase());
       context.push(String(node.getAttribute?.("data-testid") || "").toLowerCase());
