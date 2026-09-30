@@ -90,7 +90,7 @@
       if (node.tagName && String(node.tagName).toLowerCase() === "source") {
         const sources = rawImageUrls(node);
         for (const url of sources) {
-          if (isProductImage(url)) results.push({node, url, score: scoreImage(node)});
+          if (isProductImage(url)) results.push({node, url, score: scoreImage(node), variant: /(sku|variation|swatch|property)/i.test(contextFor(node))});
         }
         continue;
       }
@@ -100,7 +100,12 @@
         if (!isProductImage(url)) continue;
         const upgraded = upgradeImageUrl(url);
         const score = scoreImage(node);
-        if (score >= 0) results.push({node, url: upgraded, score});
+        if (score >= 0) results.push({
+          node,
+          url: upgraded,
+          score,
+          variant: /(sku|variation|swatch|property)/i.test(contextFor(node))
+        });
       }
     }
 
@@ -120,7 +125,11 @@
       .map((node) => node.textContent?.trim())
       .find(Boolean) || "";
 
-    const images = collectProductImages(root);
+    const imageRecords = collectProductImages(root);
+    const mainImages = imageRecords.filter((item) => !item.variant).map((item) => item.url);
+    const variantImages = imageRecords.filter((item) => item.variant).map((item) => item.url);
+    const images = [...mainImages, ...variantImages]
+      .filter((url, index, list) => list.indexOf(url) === index);
 
     const videoRoot = root.querySelectorAll("video, video source").length ? root : document;
     const videos = [
@@ -142,6 +151,8 @@
       seller: "",
       image: images[0] || "",
       images,
+      mainImages,
+      variantImages,
       videos,
       url: location.href.split("?")[0],
       market: "aliexpress.com",
