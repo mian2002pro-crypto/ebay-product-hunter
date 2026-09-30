@@ -66,39 +66,58 @@ async function getActiveTab() {
   return tab;
 }
 
+function sendTabMessage(tabId, message) {
+  return new Promise((resolve) => {
+    chrome.tabs.sendMessage(tabId, message, (response) => {
+      if (chrome.runtime.lastError) {
+        resolve({ok: false, error: chrome.runtime.lastError.message});
+        return;
+      }
+      resolve(response || {ok: false, error: "No response from the page."});
+    });
+  });
+}
+
 function isAliExpressProduct(tab) {
   return Boolean(tab?.url && /^https:\/\/www\.aliexpress\.com\/item\//i.test(tab.url));
 }
 
 async function captureEbay(tab) {
   status.textContent = "Reading the currently selected eBay picture…";
-  chrome.tabs.sendMessage(tab.id, {type: "MIAN_EXTRACT_LISTING"}, (response) => {
-    if (chrome.runtime.lastError || !response?.ok) {
-      status.textContent = "Open an eBay listing page first.";
-      return;
-    }
-    render(response.listing);
-    chrome.runtime.sendMessage({type: "MIAN_SAVE_PRODUCT", product: response.listing}, (saved) => {
-      status.textContent = saved?.ok ? "eBay listing captured with the selected picture." : "Captured, but save failed.";
-    });
+  const response = await sendTabMessage(tab.id, {type: "MIAN_EXTRACT_LISTING"});
+  if (!response?.ok) {
+    status.textContent = "Open an eBay listing page first.";
+    return;
+  }
+  render(response.listing);
+  chrome.runtime.sendMessage({type: "MIAN_SAVE_PRODUCT", product: response.listing}, (saved) => {
+    status.textContent = saved?.ok ? "eBay listing captured with the selected picture." : "Captured, but save failed.";
   });
 }
 
 async function captureAliExpress(tab) {
-  status.textContent = "Reading all pictures and videos for this AliExpress product…";
-  chrome.tabs.sendMessage(tab.id, {type: "MIAN_EXTRACT_ALI_PRODUCT"}, (response) => {
-    if (chrome.runtime.lastError || !response?.ok) {
-      status.textContent = response?.error || "Could not read this AliExpress product.";
-      return;
-    }
-    render(response.product);
-    chrome.runtime.sendMessage({type: "MIAN_SAVE_PRODUCT", product: response.product}, (saved) => {
-      status.textContent = saved?.ok
-        ? "AliExpress product captured: all product pictures and detected videos are ready."
-        : "Captured, but save failed.";
-    });
+  status.textContent = "Reading all product pictures and videos…";
+  const response = await sendTabMessage(tab.id, {type: "MIAN_EXTRACT_ALI_PRODUCT"});
+  if (!response?.ok) {
+    status.textContent = response?.error || "Could not read this AliExpress product.";
+    return;
+  }
+  render(response.product);
+  chrome.runtime.sendMessage({type: "MIAN_SAVE_PRODUCT", product: response.product}, (saved) => {
+    status.textContent = saved?.ok
+      ? "AliExpress product captured: all product pictures and detected videos are ready."
+      : "Captured, but save failed.";
   });
 }
+
+(async () => {
+  const tab = await getActiveTab();
+  if (isAliExpressProduct(tab)) {
+    status.textContent = "AliExpress product detected. You can download pictures or video directly — no capture or sourcing required.";
+    downloadPictures.textContent = "Download All Product Pictures";
+    downloadVideo.textContent = "Download Product Video";
+  }
+})();
 
 document.getElementById("hunt").addEventListener("click", async () => {
   const tab = await getActiveTab();
@@ -110,26 +129,72 @@ document.getElementById("hunt").addEventListener("click", async () => {
   captureEbay(tab);
 });
 
+async function prepareDirectMediaProduct(tab) {
+  if (!tab?.id) return null;
+
+  const ali = isAliExpressProduct(tab);
+  const messageType = ali ? "MIAN_EXTRACT_ALI_PRODUCT" : "MIAN_EXTRACT_LISTING";
+  mediaStatus.textContent = ali
+    ? "Reading AliExpress product media directly…"
+    : "Reading eBay listing media directly…";
+
+  const response = await sendTabMessage(tab.id, {type: messageType});
+  if (!response?.ok) {
+    mediaStatus.textContent = response?.error || "Could not read media from this page.";
+    return null;
+  }
+
+  const product = ali ? response.product : response.listing;
+  current = product;
+  render(product);
+  return product;
+}
+
 downloadPictures.addEventListener("click", async () => {
-  if (isAliProduct(current)) {
-    requestDownload("picture", current.images || []);
+  let product = current;
+
+  if (!product || (isAliExpressProduct(await getActiveTab()) && !isAliProduct(product))) {
+    product = await prepareDirectMediaProduct(await getActiveTab());
+  }
+
+  if (isAliProduct(product)) {
+    if (product.images?.length) {
+      requestDownload("picture", product.images);
+    } else {
+      mediaStatus.textContent = "No AliExpress product pictures were detected.";
+    }
     return;
   }
 
   const tab = await getActiveTab();
   if (!tab?.id) return;
-  chrome.tabs.sendMessage(tab.id, {type: "MIAN_GET_SELECTED_IMAGE"}, (response) => {
-    if (chrome.runtime.lastError || !response?.ok || !response.image) {
-      mediaStatus.textContent = "Select/open a picture on eBay first.";
-      return;
-    }
-    current = {...current, image: response.image, images: [response.image]};
-    render(current);
-    requestDownload("picture", [response.image]);
-  });
+
+  const direct = product?.image ? product : await prepareDirectMediaProduct(tab);
+  if (!direct?.image) {
+    mediaStatus.textContent = "No eBay product picture was detected.";
+    return;
+  }
+
+  current = {...direct, image: direct.image, images: [direct.image]};
+  render(current);
+  requestDownload("picture", [direct.image]);
 });
 
-downloadVideo.addEventListener("click", () => requestDownload("video", current?.videos || []));
+downloadVideo.addEventListener("click", async () => {
+  let product = current;
+  const tab = await getActiveTab();
+
+  if (!product || (isAliExpressProduct(tab) && !isAliProduct(product))) {
+    product = await prepareDirectMediaProduct(tab);
+  }
+
+  if (!product?.videos?.length) {
+    mediaStatus.textContent = "No downloadable product video was detected on this page.";
+    return;
+  }
+
+  requestDownload("video", product.videos);
+});
 
 function openAliExpress() {
   if (!current?.title) return;
