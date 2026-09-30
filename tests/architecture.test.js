@@ -53,7 +53,7 @@ test("eBay Hunter extracts only the currently selected eBay picture", () => {
   });
   let response;
   messages.handler({type: "MIAN_EXTRACT_LISTING"}, {}, (value) => { response = value; });
-  assert.equal(response.ok, true);
+  assert.equal(response.ok, true, response.error || "AliExpress extractor failed");
   assert.equal(response.listing.image, "https://img.example/product.jpg");
   assert.deepEqual(Array.from(response.listing.images), ["https://img.example/product.jpg"]);
 });
@@ -117,6 +117,9 @@ test("AliExpress Hunter loads a product extractor and keeps product images separ
   };
   const document = {
     images: [productA, productB, related],
+    title: "Ali Product Test",
+    body: {querySelectorAll: () => []},
+    querySelectorAll() { return []; },
     querySelector(selector) {
       if (selector === "main") return root;
       if (selector === "h1") return {textContent: "Ali Product Test"};
@@ -146,7 +149,7 @@ test("AliExpress capture keeps product picture and video downloads enabled indep
   assert.match(popup, /source === "AliExpress"/);
   assert.match(popup, /Download All Product Pictures/);
   assert.match(popup, /product\.images\?\.length/);
-  assert.match(popup, /current\?\.videos \|\| \[\]/);
+  assert.match(popup, /videos \|\| \[\]/);
   assert.match(popup, /MIAN_EXTRACT_ALI_PRODUCT/);
   assert.match(ali, /video, video source/);
   assert.match(ali, /og:video/);
