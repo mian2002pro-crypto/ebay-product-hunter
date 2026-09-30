@@ -79,6 +79,8 @@ test("Hunter supports product media downloads", () => {
   assert.match(content, /images/);
   assert.match(content, /video/);
   assert.match(background, /chrome\.downloads\.download/);
+  assert.match(background, /Images/);
+  assert.match(background, /Videos/);
   assert.match(background, /\.downloads/);
   assert.match(script, /MIAN_DOWNLOAD_MEDIA/);
   assert.match(script, /MIAN_EXTRACT_LISTING/);
@@ -244,4 +246,18 @@ test("AliExpress bulk media collector reads lazy/srcset product images and norma
   assert.ok(response.product.images.some((url) => url.includes("/kf/A.jpg")));
   assert.ok(response.product.images.some((url) => url.includes("/kf/B.jpg")));
   assert.ok(!response.product.images.some((url) => url.includes("related.jpg")));
+});
+
+
+test("AliExpress downloader is a bulk media collector, not a selected-image downloader", () => {
+  const ali = fs.readFileSync("extension/aliexpress-content.js", "utf8");
+  const background = fs.readFileSync("extension/background.js", "utf8");
+  assert.match(ali, /data-src/);
+  assert.match(ali, /data-original/);
+  assert.match(ali, /srcset/);
+  assert.match(ali, /sku|variation/i);
+  assert.match(ali, /aliexpress-media\.com/);
+  assert.match(background, /Images/);
+  assert.match(background, /Videos/);
+  assert.match(background, /conflictAction: "uniquify"/);
 });
