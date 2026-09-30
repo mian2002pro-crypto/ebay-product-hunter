@@ -261,3 +261,17 @@ test("AliExpress downloader is a bulk media collector, not a selected-image down
   assert.match(background, /Videos/);
   assert.match(background, /conflictAction: "uniquify"/);
 });
+
+
+test("AliExpress popup exposes Main, Variant and All image download groups", () => {
+  const popup = fs.readFileSync("extension/popup.html", "utf8");
+  const script = fs.readFileSync("extension/popup.js", "utf8");
+  assert.match(popup, /id="download-main-images"/);
+  assert.match(popup, /id="download-variant-images"/);
+  assert.match(popup, /id="download-all-images"/);
+  assert.match(popup, /id="download-media"/);
+  assert.match(script, /mainImages/);
+  assert.match(script, /variantImages/);
+  assert.match(script, /allImages/);
+  assert.match(script, /MIAN_DOWNLOAD_MEDIA/);
+});
