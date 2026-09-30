@@ -81,9 +81,10 @@ test("Hunter supports product media downloads", () => {
   assert.match(background, /chrome\.downloads\.download/);
   assert.match(background, /\.downloads/);
   assert.match(script, /MIAN_DOWNLOAD_MEDIA/);
-  assert.match(script, /MIAN_GET_SELECTED_IMAGE/);
-  assert.match(popup, /Download Selected Picture/);
-  assert.match(popup, /Download Video/);
+  assert.match(script, /MIAN_EXTRACT_LISTING/);
+  assert.match(script, /prepareDirectMediaProduct/);
+  assert.match(popup, /Download Product Pictures/);
+  assert.match(popup, /Download Product Video/);
 });
 
 
@@ -144,7 +145,7 @@ test("AliExpress capture keeps product picture and video downloads enabled indep
   const ali = fs.readFileSync("extension/aliexpress-content.js", "utf8");
   assert.match(popup, /source === "AliExpress"/);
   assert.match(popup, /Download All Product Pictures/);
-  assert.match(popup, /current\.images \|\| \[\]/);
+  assert.match(popup, /product\.images\?\.length/);
   assert.match(popup, /current\?\.videos \|\| \[\]/);
   assert.match(popup, /MIAN_EXTRACT_ALI_PRODUCT/);
   assert.match(ali, /video, video source/);
