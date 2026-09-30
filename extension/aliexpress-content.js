@@ -109,10 +109,14 @@
       }
     }
 
+    const seen = new Set();
     return results
       .sort((a, b) => b.score - a.score)
-      .map((item) => item.url)
-      .filter((url, index, list) => list.indexOf(url) === index);
+      .filter((item) => {
+        if (seen.has(item.url)) return false;
+        seen.add(item.url);
+        return true;
+      });
   };
 
   function extractProduct() {
