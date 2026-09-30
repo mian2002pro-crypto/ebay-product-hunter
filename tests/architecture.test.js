@@ -55,7 +55,7 @@ test("eBay Hunter extracts only the currently selected eBay picture", () => {
   messages.handler({type: "MIAN_EXTRACT_LISTING"}, {}, (value) => { response = value; });
   assert.equal(response.ok, true);
   assert.equal(response.listing.image, "https://img.example/product.jpg");
-  assert.deepEqual(response.listing.images, ["https://img.example/product.jpg"]);
+  assert.deepEqual(Array.from(response.listing.images), ["https://img.example/product.jpg"]);
 });
 
 
