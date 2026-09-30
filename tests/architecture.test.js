@@ -21,7 +21,7 @@ test("Windows Studio contains persistent prompt settings for both markets", () =
   assert.match(settings, /image:/);
 });
 
-test("eBay Hunter extracts lazy-loaded product thumbnails", () => {
+test("eBay Hunter extracts only the currently selected eBay picture", () => {
   const vm = require("node:vm");
   const source = fs.readFileSync("extension/content.js", "utf8");
   const nodes = {
@@ -41,7 +41,6 @@ test("eBay Hunter extracts lazy-loaded product thumbnails", () => {
       return null;
     },
     querySelectorAll(selector) {
-      if (selector.includes("img")) return [nodes.image];
       if (selector.includes("video")) return [];
       return [];
     }
@@ -56,6 +55,7 @@ test("eBay Hunter extracts lazy-loaded product thumbnails", () => {
   messages.handler({type: "MIAN_EXTRACT_LISTING"}, {}, (value) => { response = value; });
   assert.equal(response.ok, true);
   assert.equal(response.listing.image, "https://img.example/product.jpg");
+  assert.deepEqual(response.listing.images, ["https://img.example/product.jpg"]);
 });
 
 
@@ -81,6 +81,7 @@ test("Hunter supports product media downloads", () => {
   assert.match(background, /chrome\.downloads\.download/);
   assert.match(background, /\.downloads/);
   assert.match(script, /MIAN_DOWNLOAD_MEDIA/);
-  assert.match(popup, /Download Pictures/);
+  assert.match(script, /MIAN_GET_SELECTED_IMAGE/);
+  assert.match(popup, /Download Selected Picture/);
   assert.match(popup, /Download Video/);
 });
