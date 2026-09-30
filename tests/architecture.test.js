@@ -52,3 +52,13 @@ test("eBay Hunter extracts lazy-loaded product thumbnails", () => {
   assert.equal(response.ok, true);
   assert.equal(response.listing.image, "https://img.example/product.jpg");
 });
+
+
+test("Sourcer UI provides direct supplier search and does not claim an unverified supplier price", () => {
+  const popup = fs.readFileSync("extension/popup.html", "utf8");
+  const script = fs.readFileSync("extension/popup.js", "utf8");
+  assert.match(popup, /Miaan Sourcer/);
+  assert.match(popup, /supplier-search/);
+  assert.match(script, /aliexpress\.com\/w\/wholesale-/);
+  assert.match(script, /price not verified/i);
+});
