@@ -25,7 +25,8 @@ const downloadMedia = (product, kind, urls, sendResponse) => {
   let failed = 0;
   unique.forEach((url, index) => {
     const fallback = kind === "video" ? ".mp4" : ".jpg";
-    const name = folder + "/" + String(index + 1).padStart(2, "0") + "-" + (kind === "video" ? "video" : "image") + extensionFor(url, fallback);
+    const mediaFolder = kind === "video" ? "Videos" : "Images";
+    const name = folder + "/" + mediaFolder + "/" + String(index + 1).padStart(2, "0") + "-" + (kind === "video" ? "video" : "image") + extensionFor(url, fallback);
     chrome.downloads.download({url, filename: name, conflictAction: "uniquify", saveAs: false}, (downloadId) => {
       if (chrome.runtime.lastError || downloadId === undefined) failed++;
       completed++;
