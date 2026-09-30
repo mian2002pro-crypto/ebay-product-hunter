@@ -151,10 +151,13 @@ async function prepareDirectMediaProduct(tab) {
 }
 
 downloadPictures.addEventListener("click", async () => {
+  const tab = await getActiveTab();
+  const pageUrl = tab?.url ? tab.url.split("?")[0] : "";
   let product = current;
+  const samePage = Boolean(product?.url && pageUrl && product.url === pageUrl);
 
-  if (!product || (isAliExpressProduct(await getActiveTab()) && !isAliProduct(product))) {
-    product = await prepareDirectMediaProduct(await getActiveTab());
+  if (!samePage) {
+    product = await prepareDirectMediaProduct(tab);
   }
 
   if (isAliProduct(product)) {
@@ -165,9 +168,6 @@ downloadPictures.addEventListener("click", async () => {
     }
     return;
   }
-
-  const tab = await getActiveTab();
-  if (!tab?.id) return;
 
   const direct = product?.image ? product : await prepareDirectMediaProduct(tab);
   if (!direct?.image) {
@@ -181,10 +181,12 @@ downloadPictures.addEventListener("click", async () => {
 });
 
 downloadVideo.addEventListener("click", async () => {
-  let product = current;
   const tab = await getActiveTab();
+  const pageUrl = tab?.url ? tab.url.split("?")[0] : "";
+  let product = current;
+  const samePage = Boolean(product?.url && pageUrl && product.url === pageUrl);
 
-  if (!product || (isAliExpressProduct(tab) && !isAliProduct(product))) {
+  if (!samePage) {
     product = await prepareDirectMediaProduct(tab);
   }
 
