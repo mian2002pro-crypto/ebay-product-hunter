@@ -90,8 +90,10 @@
       ...[...videoRoot.querySelectorAll("video, video source")].map((node) =>
         node?.currentSrc || node?.src || node?.getAttribute("src") || node?.getAttribute("data-src") || ""
       ),
-      ...[...document.querySelectorAll("meta[property='og:video'], meta[property='og:video:url'], meta[property='og:video:secure_url']")]
-        .map((node) => node?.getAttribute("content") || "")
+      ...(typeof document.querySelectorAll === "function"
+        ? [...document.querySelectorAll("meta[property='og:video'], meta[property='og:video:url'], meta[property='og:video:secure_url']")]
+        : []
+      ).map((node) => node?.getAttribute("content") || "")
     ]
       .filter((url) => /^https?:\/\//i.test(url))
       .filter((url) => /\.(?:mp4|webm|mov)(?:[?#]|$)/i.test(url) || /(?:alicdn\.com|aliexpress-media\.com)/i.test(url))
