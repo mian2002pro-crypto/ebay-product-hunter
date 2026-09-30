@@ -39,6 +39,11 @@ test("eBay Hunter extracts lazy-loaded product thumbnails", () => {
       if (selector.includes("meta")) return nodes.meta;
       if (selector.includes("img")) return nodes.image;
       return null;
+    },
+    querySelectorAll(selector) {
+      if (selector.includes("img")) return [nodes.image];
+      if (selector.includes("video")) return [];
+      return [];
     }
   };
   const messages = {};
