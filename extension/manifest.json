@@ -45,6 +45,15 @@
         "content.js"
       ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.aliexpress.com/*"
+      ],
+      "js": [
+        "aliexpress-content.js"
+      ],
+      "run_at": "document_idle"
     }
   ]
 }
