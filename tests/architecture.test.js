@@ -256,7 +256,7 @@ test("AliExpress downloader is a bulk media collector, not a selected-image down
   assert.match(ali, /data-original/);
   assert.match(ali, /srcset/);
   assert.match(ali, /sku|variation/i);
-  assert.match(ali, /aliexpress-media\.com/);
+  assert.match(ali, /aliexpress-media\\.com|aliexpress-media\.com/);
   assert.match(background, /Images/);
   assert.match(background, /Videos/);
   assert.match(background, /conflictAction: "uniquify"/);
