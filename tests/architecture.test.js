@@ -168,7 +168,7 @@ test("AliExpress media downloads work directly without capture or sourcing first
   assert.match(script, /MIAN_EXTRACT_ALI_PRODUCT/);
   assert.match(script, /MIAN_DOWNLOAD_MEDIA/);
   assert.match(script, /Download All Product Pictures/);
-  assert.match(script, /Download Product Video/);
+  assert.match(popup, /Download Product Video/);
 });
 
 test("Direct media workflow never saves or sources the product", () => {
