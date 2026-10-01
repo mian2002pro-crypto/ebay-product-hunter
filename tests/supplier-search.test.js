@@ -2,17 +2,23 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { searchSuppliers } = require("../lib/supplier-search.js");
 
-test("supplier search delegates to CJ provider and returns normalized results", async () => {
-  const fake = async () => ({
-    total: 1,
-    items: [{ id: "p1", title: "Pet Hair Remover", price: 3.2, currency: "USD", source: "CJdropshipping" }]
+test("supplier search uses the API-free local provider and returns normalized results", async () => {
+  const result = await searchSuppliers({
+    provider: "local",
+    q: "pet hair remover",
+    market: "US"
   });
-  const result = await searchSuppliers({ provider: "cj", q: "pet hair remover" }, { cjSearch: fake });
-  assert.equal(result.provider, "cj");
-  assert.equal(result.total, 1);
-  assert.equal(result.items[0].source, "CJdropshipping");
+
+  assert.equal(result.provider, "local");
+  assert.ok(result.total >= 1);
+  assert.equal(result.items[0].market, "US");
+  assert.ok(result.items[0].title);
+  assert.ok(result.items[0].price > 0);
 });
 
 test("unknown supplier provider fails clearly", async () => {
-  await assert.rejects(() => searchSuppliers({ provider: "unknown", q: "x" }), /Unsupported supplier provider/);
+  await assert.rejects(
+    () => searchSuppliers({ provider: "unknown", q: "x" }),
+    /Unsupported supplier provider/
+  );
 });

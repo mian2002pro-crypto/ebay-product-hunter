@@ -1,68 +1,48 @@
-# eBay Product Hunter
+# Miaan eBay Product Hunter + AI Listing Studio
 
-A product-research SaaS foundation for eBay sellers: market research, trend intelligence, seasonal hunting and supplier sourcing.
+A Next.js product-research and listing workflow for eBay sellers: product hunting, trend intelligence, supplier sourcing, market-specific AI listing generation, and workflow tracking.
 
-## Current build
+## Miaan workflow
 
-- Next.js dashboard
-- Market selector for major eBay marketplaces
-- Product search and seasonal filters
-- Product opportunity table
-- eBay Browse API provider
-- Secure server-side eBay OAuth token flow
-- Price-range search support
-- Normalized eBay search response
-- Automated unit tests for analytics and eBay query/normalization logic
+1. Hunt an eBay product
+2. Match a supplier through the sourcing layer
+3. Open Miaan AI Listing Studio
+4. Choose USA or UK
+5. Generate Title, Description, Options and Image Prompt
+6. Generate All or individual sections
+7. Download a market-specific listing bundle
+8. Track Hunted → Sourced → Listing Generated → Ready
 
-## Live eBay data setup
+## Environment
 
-The app uses eBay's official Browse API for item discovery. eBay's Browse API supports keyword/category search and filtering, and requires an application access token. See the official eBay Developers documentation: https://developer.ebay.com/api-docs/buy/api-browse.html
-
-Create eBay Developer credentials and put them in your deployment environment:
+AI generation is server-side. Never expose API keys in browser code or commit real environment files.
 
 ```
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4.1-mini
 EBAY_CLIENT_ID=
 EBAY_CLIENT_SECRET=
+CJ_ACCESS_TOKEN=
+DATABASE_URL=
 ```
-
-Never put these values in client-side code or commit a real `.env` file.
-
-The API route is:
-
-```
-GET /api/ebay/search?market=US&q=halloween%20lights&minPrice=10&maxPrice=50&limit=25
-```
-
-Supported markets currently include US, UK, CA, AU, DE, FR, IT and ES.
-
-## Important data limitation
-
-The official Browse API provides active/purchasable listings. It does **not** by itself provide the sold-count history needed to claim that an item has sold 183 units, for example. The product-hunter sold-demand engine therefore needs a separate compliant data source or seller-authorized data before those metrics are shown as real.
-
-## Roadmap
-
-1. Connect live eBay search to the dashboard
-2. Add opportunity scoring from observable listing data
-3. Add compliant sold-demand data source
-4. Add supplier provider abstraction and AliExpress/CJ integration
-5. Add PostgreSQL persistence
-6. Add trend history and seasonal intelligence
-7. Add authentication, watchlists and alerts
-8. Deploy on Railway
 
 ## Run
 
 ```
 npm install
 npm test
+npm run build
 npm run dev
 ```
 
+## Data limitation
 
-### Supplier sourcing: CJdropshipping
+The official eBay Browse API provides active/purchasable listings. It does not by itself provide sold-count history. Active-listing data must not be presented as verified sold-demand data without a compliant data source.
 
-The app now includes a CJdropshipping provider adapter and `/api/sourcing/search`.
+## Security
 
-Set either `CJ_ACCESS_TOKEN` or `CJ_API_KEY`. CJ's API 2.0 product search supports keyword, country, price-range and pagination filters. The provider normalizes results into the app's supplier model.
+Keep eBay, CJ and AI credentials server-side. Do not commit real API secrets.
 
-CJ API credentials should be kept server-side and never exposed to browser code.
+## Release
+
+The Miaan AI Listing Studio work is on feature/miaan-listing-studio. Merge into main only after npm test and npm run build pass.
